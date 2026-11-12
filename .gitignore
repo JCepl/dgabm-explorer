@@ -1,0 +1,9 @@
+data.json
+extra.json
+reference.json
+*.xlsx
+*.pdf
+*.zip
+PASSWORD*
+*password*.txt
+.DS_Store

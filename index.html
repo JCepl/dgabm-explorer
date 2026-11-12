@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css"></head><body class="locked">
+<nav>
+  <span class="brand">DG-ABM article explorer</span>
+  <a data-tab="pca" class="on">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data dictionary</a>
+  <span class="sp"></span><button class="btn" onclick="location.reload()">Lock</button><span class="tools"><a id="dl-raw" title="the 44 workbook columns for all articles">Download table (CSV)</a></span>
+</nav>
+<div id="boot" class="boot">
+    <form id="unlock-form" class="unlock-card">
+      <h1>DG-ABM explorer</h1>
+      <p>Enter the shared password to open the explorer.</p>
+      <label for="unlock-password">Password</label>
+      <input id="unlock-password" type="password" autocomplete="current-password" required autofocus>
+      <button id="unlock-button" type="submit">Open explorer</button>
+      <p id="unlock-message" role="alert" aria-live="polite"></p>
+    </form>
+  </div>
+<main>
+
+<section id="tab-pca" class="tab on">
+  <div class="bar">
+    <div class="row">
+      <div class="pills" id="scope"><button data-s="inputs" class="on">Inputs only</button><button data-s="all">Inputs + outputs</button><button data-s="outputs">Outputs only</button></div>
+      <label>Clusters k <select id="k"></select></label>
+      <label><input type="checkbox" id="auto" checked> Auto k</label>
+      <label><input type="checkbox" id="mark" checked> Mark model papers</label>
+      <label><input type="checkbox" id="load" checked> Loadings</label>
+      <label id="topw">top <select id="topn"><option>3</option><option>5</option><option selected>7</option><option>10</option><option>15</option></select></label>
+      <label><input type="checkbox" id="d3"> 3D</label>
+    </div>
+    <div class="notes" id="scopenote"></div>
+    <div class="notes" id="note"></div>
+  </div>
+  <div class="grid2">
+    <div><h4>PCA map</h4><p class="panel-help">Papers by PC1 and PC2, coloured by cluster. Rings mark the 27 model papers. Hover or click a paper.</p><div class="panel" id="pca" style="height:620px"></div></div>
+    <div><h4>Hierarchy</h4><p class="panel-help">Ward.D2 on the PCs. Each leaf is a paper (yellow = model papers). Click a fork to re-cut the tree, a leaf to inspect the paper.</p><svg id="dend"></svg><div class="split" id="fork">Click a fork circle.</div></div>
+  </div>
+  <div class="card" id="info" style="margin-top:14px"><h4>Paper inspector</h4><p class="help">Click any paper in the map or a leaf in the tree to inspect it here.</p></div>
+  <div class="card">
+    <h4>Features used</h4>
+    <p class="help">Click a feature to switch it on or off; everything recomputes. <a href="#" id="r20">Restore the 20-feature set of the stored results</a> · <a href="#" id="rst">startup set</a> · <a href="#" id="rw">reset weights</a>.</p>
+    <div class="notes" id="featnote"></div>
+    <div class="wmode"><label><input type="checkbox" id="wmode"> Weight mode: click a ticked feature to add +1 to its weight (shift-click: -1). A small +X appears on the chip.</label></div>
+    <div class="chipgrid" id="chips"></div>
+    <details style="margin-top:12px" id="wdetails"><summary>Exact weights and category weights (optional - weight mode above is quicker)</summary>
+      <p class="help" style="margin-top:8px">A weight says how much a feature counts in the PCA. Every ticked feature is standardized, then multiplied by the square root of its weight, so its share of the variance is proportional to the weight: 1 = normal, 2 = counts double, 0.5 = half, 0 = left out.</p>
+      <div class="row"><button class="btn" id="wbox-eq">Equal weight per category</button><button class="btn" id="wbox-reset">Reset all weights to 1</button></div><div id="wbox"></div></details>
+    <details style="margin-top:10px" id="sugbox"><summary>Suggest what to tick, by statistics (click to expand)</summary>
+      <p class="help" style="margin-top:8px">Three screening steps on the features of the current scope: (1) prevalence of 0/1 features, (2) redundancy with an already kept feature, (3) communality on the PCs covering 70% of the variance. Each threshold can be changed.</p>
+      <div class="row"><label>1. Min. prevalence (%) <b id="sg1v">5</b><br><input type="range" id="sg1" min="1" max="15" step="1" value="5"></label><label>2. Drop when |r| ≥ <b id="sg2v">0.90</b><br><input type="range" id="sg2" min="0.6" max="1" step="0.01" value="0.9"></label><label>3. Min. communality <b id="sg3v">0.50</b><br><input type="range" id="sg3" min="0" max="0.9" step="0.01" value="0.5"></label></div>
+      <p class="notes" id="sugsum"></p><button class="btn" id="sugapply">Tick the suggestion (IN set) for this scope</button><div class="scroll" id="sugtable" style="max-height:420px;margin-top:8px"></div></details>
+  </div>
+  <div class="grid2">
+    <div><h3 style="margin-top:6px">PCA loadings</h3><label>Component <select id="pcsel"></select></label><div class="panel" id="loadplot" style="height:400px;margin-top:6px"></div></div>
+    <div><h3 style="margin-top:6px">Average silhouette by k</h3><div class="panel" id="sil" style="height:440px"></div></div>
+  </div>
+  <h3>Clusters at this k</h3><p class="help">Size, mean silhouette, the most prevalent coded features in each cluster, and the features whose prevalence differs most from the remaining papers (percentage points).</p><div id="ctab"></div>
+  <h3>Sequence of splits</h3><p class="help">Each row is the fork that turns k-1 clusters into k, over the whole offered range.</p><div id="stab"></div>
+  <h3>Summary map: a semi-subjective 3D view of all source papers</h3>
+  <div class="card"><p class="help">A transparent interpretive map, not PCA. Drag to rotate, scroll to zoom, hover for a paper, click a point to inspect it. Small offsets separate papers with the same categorical scores. Coloured points are retained, grey points are excluded from PCA/clustering. It loads when you scroll here.</p>
+  <div class="grid2" style="grid-template-columns:repeat(3,1fr);gap:12px"><div><b>X - inferred field</b><br><span class="help">Evolutionary theory → genetics → eco-evolutionary ecology → conservation → applied management.</span></div><div><b>Y - initial genetic detail</b><br><span class="help">Abstract/infinitesimal → locus/QTL detail → correlations/structure → LD, dominance or epistasis.</span></div><div><b>Z - study style</b><br><span class="help">Conceptual → scenarios → quantitative experiments → empirical parameterization → calibration/projection.</span></div></div></div>
+  <div class="panel" id="sum3d" style="height:720px"><div class="skeleton" style="height:100%">Scroll here to load the 3D map…</div></div>
+  <div class="card" id="suminfo" style="margin-top:12px"><h4>3D-map paper inspector</h4><p class="help">Click any point in the 3D map.</p></div>
+</section>
+
+<section id="tab-fm" class="tab">
+  <p class="help">Four views of the same 47 features. Hover over any heatmap cell to see the feature combination; click a cell to open 'Cross two features' below with that pair filled in.</p>
+  <div class="subtabs" id="fmtabs"><button data-s="1" class="on">1 · Article x feature table</button><button data-s="2">2 · Co-occurrence matrix</button><button data-s="3">3 · Clustered co-occurrence</button><button data-s="4">4 · Rescaled clustering</button></div>
+  <div class="sub on" id="fm1"><p class="help" id="fm1note"></p><div class="row" style="margin-bottom:8px"><button class="btn" id="fm-dl-all">Download full matrix (CSV)</button><button class="btn" id="fm-dl-tick">Download ticked features only</button></div><div class="scroll" style="max-height:72vh" id="fmtable"></div></div>
+  <div class="sub" id="fm2"><div class="card"><h4>Co-occurrence matrix</h4><p class="help">How often each pair of features appears together in the same article (raw counts, not a correlation). The diagonal is a feature's own n. Darker = more articles have both. Features keep the grouping of the table above; group boundaries are white lines.</p></div><div id="cooc" style="height:980px" class="panel"></div></div>
+  <div class="sub" id="fm3"><div class="card"><h4>Feature clustering (co-occurrence-based)</h4><p class="help">Clusters the 47 FEATURES by how similar their co-occurrence pattern is (Jaccard distance, average linkage) - not the PCA, which clusters the papers. The dendrogram sits on the left and top edge of the heatmap it orders. A very short branch usually means two near-duplicate features.</p></div><div id="clus" style="height:1050px" class="panel"></div></div>
+  <div class="sub" id="fm4"><div class="card"><h4>Feature clustering, rescaled (rare features weighted equally)</h4><p class="help">Raw counts let common features dominate. Choose a rescaling:</p>
+    <label><input type="radio" name="resc" value="share" checked> Share of the row feature's articles (%)</label> &nbsp; <label><input type="radio" name="resc" value="phi"> Phi correlation (x100)</label> &nbsp; <label><input type="radio" name="resc" value="lift"> Lift: log2(observed / expected)</label>
+    <p class="help" id="rescnote" style="margin-top:8px"></p></div><div id="resc" style="height:1050px" class="panel"></div></div>
+  <details class="card" id="crossbox" style="margin-top:16px"><summary style="font-size:18px">Cross two features (click to expand)</summary>
+    <div class="row" style="margin:10px 0"><label>Feature A <select id="fa"></select></label><label>Feature B <select id="fb"></select></label></div><div id="crossout"></div></details>
+</section>
+
+<section id="tab-cite" class="tab">
+  <div class="grid2" style="grid-template-columns:300px minmax(0,1fr)">
+    <div class="card">
+      <label>Focus study<br><select id="cfocus" style="width:100%"></select></label><br><br>
+      <b>Network scope</b><br><label><input type="radio" name="cscope" value="all" checked> All connected studies</label><br><label><input type="radio" name="cscope" value="focus"> Focused neighbourhood</label>
+      <p><label>Neighbourhood depth <select id="cdepth"><option>1</option><option>2</option></select></label></p>
+      <label><input type="checkbox" id="clab" checked> Show article IDs</label>
+      <p class="help">Colours follow the clusters of the PCA tab (k as set there). Click an article node to open its one- or two-step neighbourhood.</p>
+      <p class="help" id="cstatus"></p>
+    </div>
+    <div><h3 style="margin-top:0">Citation network</h3><div class="notes" id="csummary"></div><div class="panel" id="cnet" style="height:660px"></div></div>
+  </div>
+  <div class="grid2" style="grid-template-columns:300px minmax(0,1fr);margin-top:14px">
+    <div class="card"><b>Cluster matrix shows</b><br><label><input type="radio" name="cmeas" value="count" checked> Number of citation links</label><br><label><input type="radio" name="cmeas" value="share"> Share of citing cluster's links</label><p class="help">Rows do the citing; columns receive the citations.</p></div>
+    <div><h3 style="margin-top:0">Cross-citing among groups</h3><div class="panel" id="cmat" style="height:520px"></div></div>
+  </div>
+  <h3>Citation links</h3><div id="cedges"></div>
+</section>
+
+<section id="tab-dict" class="tab">
+  <p class="help">The actual workbook: all retained articles by all 44 columns - scroll down for more rows, right for more columns. The header stays put while you scroll: role badges, the variable(s) each column produced (click a chip to switch it on or off in the PCA), and the column name (hover for its full text).</p>
+  <div class="row" style="margin-bottom:8px"><input type="search" id="dsearch" placeholder="search all cells..." style="width:300px"><span class="help" id="dcount"></span></div>
+  <div class="scroll" style="max-height:78vh" id="dtable"></div>
+</section>
+
+</main>
+<footer id="foot"></footer>
+
+
+<script type="module" src="unlock.js"></script></body></html>

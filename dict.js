@@ -27,7 +27,7 @@
   };
   DT.setup = function () {
     let searchTimer;
-    $('dsearch').oninput = e => { q = e.target.value; clearTimeout(searchTimer); searchTimer = setTimeout(DT.render, 120); };
+    $('dsearch').oninput = e => { q = e.target.value; clearTimeout(searchTimer); searchTimer = setTimeout(() => G.measureUpdate(DT.render), 120); };
     $('dl-raw').onclick = async () => { await G.extra(); G.csv([G.D.dict.map(d => d.name), ...G.D.raw], 'dgabm_workbook_retained_articles.csv'); };
   };
 })();

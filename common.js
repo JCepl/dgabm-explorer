@@ -20,9 +20,10 @@
 
   // ---- lazy loading: the small plotly build is in index.html; the full build (3D) and extra.json (raw workbook, dictionary, summary map) load on demand
   G.loadScript = src => new Promise((res, rej) => { const t = document.createElement('script'); t.src = src; t.onload = res; t.onerror = rej; document.head.appendChild(t); });
+  G.pendingPlots = new Set();
   G.patchPlotly = () => {   // one look for every plot: system font, tidy hover labels
     if (!window.Plotly || Plotly.__patched === window.Plotly.react) return; const r = Plotly.react;
-    Plotly.react = (el, d, l, c) => { l = l || {}; l.font = Object.assign({ family: FONT, size: 12 }, l.font); l.hoverlabel = Object.assign({ font: { family: FONT, size: 12 }, bgcolor: '#fff', bordercolor: '#cfd8de' }, l.hoverlabel); return r.call(Plotly, el, d, l, c); };
+    Plotly.react = (el, d, l, c) => { l = l || {}; l.font = Object.assign({ family: FONT, size: 12 }, l.font); l.hoverlabel = Object.assign({ font: { family: FONT, size: 12 }, bgcolor: '#fff', bordercolor: '#cfd8de' }, l.hoverlabel); const pending = r.call(Plotly, el, d, l, c); G.pendingPlots.add(pending); Promise.resolve(pending).then(() => G.pendingPlots.delete(pending), () => G.pendingPlots.delete(pending)); return pending; };
     Plotly.__patched = Plotly.react;
   };
   G.need3d = () => G.p3d || (G.p3d = G.loadScript('vendor/plotly.min.js').then(() => { G.has3d = true; G.patchPlotly(); }));
@@ -40,16 +41,33 @@
     const el = G.$(id);
     let task = deferredPlots.get(el);
     if (!task) {
-      task = { visible: false }; deferredPlots.set(el, task); plotObserver.observe(el);
+      const rect = el.getBoundingClientRect();
+      task = { visible: rect.width > 0 && rect.height > 0 && rect.top < innerHeight + 150 && rect.bottom > -150 }; deferredPlots.set(el, task); plotObserver.observe(el);
     }
     task.draw = draw; task.dirty = true;
     if (task.visible) { task.dirty = false; draw(); }
+  };
+  G.cancelPlot = id => { const task = deferredPlots.get(G.$(id)); if (task) task.dirty = false; };
+  let updateNumber = 0;
+  // DOM-only diagnostics let browser checks measure rendering without tool overhead.
+  G.measureUpdate = draw => {
+    const start = performance.now(), number = ++updateNumber;
+    draw();
+    return G.latestUpdate = Promise.all([...G.pendingPlots])
+      .then(() => new Promise(requestAnimationFrame))
+      .then(() => {
+        if (number === updateNumber) {
+          document.documentElement.dataset.updateMs = (performance.now() - start).toFixed(1);
+          document.documentElement.dataset.updateCount = number;
+        }
+      });
   };
   G.ew = f => G.st.w[f] * G.st.cw[G.F[f].group];          // effective weight = feature weight x category weight
 
   G.init = async function () {
     G.patchPlotly();
     const D = G.D = window.DGABM_DATA.core;
+    G.varied = Object.fromEntries(D.columns.map((f, j) => [f, D.X.some(row => row[j] !== D.X[0][j])]));
     G.n = D.n; G.col = new Map(D.columns.map((c, i) => [c, i])); G.F = Object.fromEntries(D.features.map(f => [f.key, f]));
     G.binKeys = D.features.filter(f => f.group !== 'continuous' && f.binary).map(f => f.key);       // the 47 candidate 0/1 features, in group order
     G.prev = Object.fromEntries(G.binKeys.map(k => [k, D.X.reduce((s, r) => s + r[G.col.get(k)], 0)]));
@@ -59,16 +77,19 @@
 
   // analysis for the current selection (cached)
   G.compute = function () {
-    const st = G.st, D = G.D, feats = G.inScope().filter(f => st.ticks.has(f) && G.ew(f) > 0);
+    const st = G.st, D = G.D, selected = G.inScope().filter(f => st.ticks.has(f) && G.ew(f) > 0), feats = selected.filter(f => G.varied[f]);
     const key = feats.map(f => f + ':' + G.ew(f)).join('|');
     if (!st.cache.has(key)) {
+      const analysisStart = performance.now();
       const idx = feats.map(f => G.col.get(f)), res = feats.length >= 3 ? G.C.analyse(D.X, idx, feats.map(f => G.ew(f)), G.KR) : { error: 'few' };
+      document.documentElement.dataset.analysisMs = (performance.now() - analysisStart).toFixed(1);
       res.feats = feats; res.key = key;
       // Slider exploration should not keep every past analysis in memory.
       if (st.cache.size >= 24) st.cache.delete(st.cache.keys().next().value);
       st.cache.set(key, res);
     }
-    return st.cache.get(key);
+    const result = st.cache.get(key); result.skipped = selected.filter(f => !G.varied[f]);
+    return result;
   };
   G.labels = R => G.C.cutree(R.merges, G.n, G.st.k);   // Int32Array of 1..k
   G.curK = R => (G.st.auto ? R.bestK : G.st.k);

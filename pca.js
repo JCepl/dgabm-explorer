@@ -24,14 +24,16 @@
   function notes(R, lab) {
     const st = G.st, p = R.P, silK = R.sil[R.ks.indexOf(st.k)], best = Math.max(...R.sil), edge = R.bestK === G.KR[0] || R.bestK === G.KR[1];
     $('scopenote').textContent = { inputs: 'Inputs only: how the models are built (interaction, traits, genetics, management, QTL / alleles / heritability / generations). The 16 output indicators are left out.', all: 'Inputs + outputs: how the models are built and what they report.', outputs: 'Outputs only: what the models report (16 output indicators and the number of outputs).' }[st.scope];
+    $('quickstats').innerHTML = `<b>${G.n} papers</b><span>${R.feats.length} features</span><span>PC1–${p.nPc}: ${p.cumulative[p.nPc - 1].toFixed(1)}%</span><span>k = ${st.k}</span><span>Silhouette ${silK.toFixed(3)}</span>${best < 0.25 ? '<span class="warn">Weak cluster structure</span>' : ''}${edge ? '<span class="warn">Best k at range edge</span>' : ''}`;
     const mods = [...lab].map((l, i) => G.D.articles[i].model ? l : 0).filter(Boolean), dist = {}; mods.forEach(l => dist[l] = (dist[l] || 0) + 1);
     $('note').innerHTML = `<b>${R.feats.length} features</b>${R.feats.some(f => G.ew(f) !== 1) ? ' (weights applied)' : ''} standardized, PC1-PC${p.nPc} retained (${p.cumulative[p.nPc - 1].toFixed(1)}% of the variance), Ward.D2 on Euclidean distances between those PCs. Average silhouette at k = ${st.k}: <b>${silK.toFixed(3)}</b>; over k = ${G.KR[0]}-${G.KR[1]} the maximum is at k = ${R.bestK} (${best.toFixed(3)}). ` +
       (best < 0.25 ? '<span class="warn">Warning: the best silhouette is below 0.25, so the cluster structure is weak - treat the clusters as a rough guide, not as natural groups.</span> ' : '') +
       (edge ? `<span class="warn">Warning: the best k sits at the edge of the offered range (k = ${R.bestK}), so there is no clear natural number of clusters.</span> ` : '') +
       `The 27 model papers fall into: ${Object.keys(dist).map(c => 'C' + c + ': ' + dist[c]).join(', ')}.`;
+    const excluded = R.skipped?.length ? `<div class="warn">Constant features left out: ${R.skipped.map(f => G.esc(G.F[f].label)).join(', ')}.</div>` : '';
     const bad = R.feats.filter(f => G.F[f].binary && G.prev[f] !== undefined && (G.prev[f] < 0.05 * G.n || G.prev[f] > 0.95 * G.n));
     const l1 = Array.from(p.loadings[0]), same = Math.max(l1.filter(v => v > 0).length, l1.filter(v => v < 0).length) / l1.length;
-    $('featnote').innerHTML = (bad.length ? `<div class="warn">Note: ${bad.map(f => G.esc(G.F[f].label)).join(', ')} fall outside the 5-95% prevalence rule; standardizing near-constant columns amplifies noise.</div>` : '') +
+    $('featnote').innerHTML = excluded + (bad.length ? `<div class="warn">Note: ${bad.map(f => G.esc(G.F[f].label)).join(', ')} fall outside the 5-95% prevalence rule; standardizing near-constant columns amplifies noise.</div>` : '') +
       (same >= 0.8 ? `<div class="warn">Note: ${Math.round(100 * same)}% of the PC1 loadings have the same sign, so PC1 mostly measures how many of these features a paper has coded (a size axis), not a contrast between kinds of papers.</div>` : '');
   }
 
@@ -62,7 +64,7 @@
       if (!three) ann.push({ x: G.mean(ids.map(i => p.scores[i][0])), y: G.mean(ids.map(i => p.scores[i][1])), text: '<b>C' + c + '</b>', showarrow: false, font: { size: 13, color: ci(c) }, bgcolor: 'rgba(255,255,255,.85)', bordercolor: ci(c), borderpad: 2 });
     }
     const axT = j => `PC${j + 1} (${p.explained[j].toFixed(1)}%)`;
-    const layout = { uirevision: R.key, margin: { l: 55, r: 12, t: 8, b: 48 }, legend: { orientation: 'h', y: -0.14 }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { color: ink } };
+    const layout = { uirevision: R.key, margin: { l: 48, r: 8, t: 38, b: 48 }, legend: { orientation: 'h', y: 1.02, yanchor: 'bottom', font: { size: 9 } }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { color: ink } };
     if (three) layout.scene = { xaxis: { title: axT(0) }, yaxis: { title: axT(1) }, zaxis: { title: axT(2) } };
     else {
       layout.xaxis = { title: axT(0), zeroline: true, zerolinecolor: '#dde3e8', gridcolor: '#f0f3f6' }; layout.yaxis = { title: axT(1), zeroline: true, zerolinecolor: '#dde3e8', gridcolor: '#f0f3f6' };
@@ -82,9 +84,10 @@
 
   // ---------------------------------------------------------------- dendrogram
   function drawDend(R, lab) {
-    const st = G.st, n = G.n, svg = $('dend'), W = svg.clientWidth || 700, H = 470, m = { l: 34, r: 8, t: 26, b: 14 }, C = G.C;
+    const st = G.st, n = G.n, svg = $('dend'), W = svg.clientWidth || 700, H = svg.clientHeight || 470, m = { l: 34, r: 8, t: 26, b: 14 }, C = G.C;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const order = C.leafOrder(R.merges, n), pos = new Map(order.map((l, i) => [l, i]));
-    const hmax = R.merges[R.merges.length - 1].height, X = x => m.l + (x + 0.5) / n * (W - m.l - m.r), Y = h => H - m.b - 56 - (h / hmax) * (H - m.t - m.b - 56);
+    const hmax = R.merges[R.merges.length - 1].height, X = x => m.l + (x + 0.5) / n * (W - m.l - m.r), Y = h => H - m.b - 32 - (h / hmax) * (H - m.t - m.b - 32);
     const node = new Map(), out = [];
     R.merges.forEach(q => {
       const xa = q.a < n ? pos.get(q.a) : node.get(q.a).x, xb = q.b < n ? pos.get(q.b) : node.get(q.b).x, ya = q.a < n ? 0 : node.get(q.a).h, yb = q.b < n ? 0 : node.get(q.b).h;
@@ -122,7 +125,7 @@
   function drawLoadings(R) {
     const p = R.P, pc = +$('pcsel').value || 0, L = R.feats.map((f, i) => ({ f, v: p.loadings[pc][i] })).sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).slice(0, 14).reverse();
     Plotly.react('loadplot', [{ type: 'bar', orientation: 'h', x: L.map(l => l.v), y: L.map(l => G.F[l.f].label), marker: { color: L.map(l => l.v >= 0 ? '#0072B2' : '#D55E00') }, hovertemplate: '%{y}: %{x:.3f}<extra></extra>' }],
-      { margin: { l: 190, r: 10, t: 8, b: 36 }, title: { text: `PC${pc + 1} explains ${p.explained[pc].toFixed(1)}% of the standardized variation`, font: { size: 12 }, x: 0.02 }, xaxis: { title: 'loading', zeroline: true }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { color: G.font() } }, { displaylogo: false, responsive: true, displayModeBar: false });
+      { margin: { l: 180, r: 10, t: 30, b: 36 }, title: { text: `PC${pc + 1} explains ${p.explained[pc].toFixed(1)}% of the standardized variation`, font: { size: 11 }, x: 0.02, y: 0.99, yanchor: 'top' }, xaxis: { title: 'loading', zeroline: true }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { color: G.font() } }, { displaylogo: false, responsive: true, displayModeBar: false });
   }
   function drawSil(R) {
     const st = G.st;
@@ -154,7 +157,8 @@
       div.innerHTML = `<h5>${G.esc(D.group_titles[g])}</h5><div class="lk"><a data-a="all">all</a> · <a data-a="none">none</a></div>`;
       div.querySelectorAll('a').forEach(a => a.onclick = () => { members.forEach(m => { if (a.dataset.a === 'all') { st.ticks.add(m.key); if (st.w[m.key] <= 0) st.w[m.key] = 1; } else st.ticks.delete(m.key); }); G.emit('state'); });
       members.forEach(m => {
-        const c = document.createElement('span'), on = st.ticks.has(m.key), add = st.w[m.key] - 1;
+        const c = document.createElement('button'), on = st.ticks.has(m.key), add = st.w[m.key] - 1;
+        c.type = 'button'; c.setAttribute('aria-pressed', String(on));
         c.className = 'chip' + (on ? ' on' : ''); c.textContent = m.label;
         if (on && add > 0) { const s = document.createElement('sup'); s.textContent = '+' + +add.toFixed(2); c.appendChild(s); }
         c.title = (m.binary ? '0/1 feature, n = ' + (G.prev[m.key] ?? '') : 'number') + ' - click to ' + (on ? 'remove' : 'add');
@@ -169,10 +173,16 @@
   P.render = function () {
     const st = G.st; $('topw').style.display = st.load ? '' : 'none'; chips();
     const cur = G.cur();
-    if (!cur) { $('note').innerHTML = '<span class="warn">Tick at least 3 features (weight above 0) that are not constant.</span>'; return; }
+    if (!cur) {
+      $('quickstats').textContent = 'Choose at least 3 non-constant features with positive weights.';
+      $('note').textContent = $('quickstats').textContent;
+      ['pca', 'loadplot', 'sil'].forEach(id => { G.cancelPlot(id); Plotly.purge(id); $(id).replaceChildren(); });
+      G.cancelPlot('dend'); $('dend').replaceChildren(); $('fork').textContent = ''; $('ctab').textContent = ''; $('stab').textContent = '';
+      return;
+    }
     const { R, lab } = cur;
     $('k').value = st.k; $('auto').checked = st.auto; $('k').disabled = st.auto && false;
-    notes(R, lab); drawMap(R, lab); drawDend(R, lab); forkBox(R, lab); tables(R, lab);
+    notes(R, lab); G.lazyPlot('pca', () => drawMap(R, lab)); G.lazyPlot('dend', () => drawDend(R, lab)); forkBox(R, lab); tables(R, lab);
     $('pcsel').dataset.v = Math.min(+$('pcsel').dataset.v || 0, R.P.nPc - 1);
     $('pcsel').innerHTML = Array.from({ length: R.P.nPc }, (_, i) => `<option value="${i}"${i === (+$('pcsel').dataset.v || 0) ? ' selected' : ''}>PC ${i + 1}</option>`).join('');
     G.lazyPlot('loadplot', () => drawLoadings(R));
@@ -184,7 +194,7 @@
   P.renderView = function () {
     $('topw').style.display = G.st.load ? '' : 'none';
     const cur = G.cur();
-    if (cur) { drawMap(cur.R, cur.lab); drawDend(cur.R, cur.lab); }
+    if (cur) { G.lazyPlot('pca', () => drawMap(cur.R, cur.lab)); G.lazyPlot('dend', () => drawDend(cur.R, cur.lab)); }
   };
   P.setup = function () {
     const st = G.st; G.on('extra', () => { if (st.sel != null) select(st.sel); });

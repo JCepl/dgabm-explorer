@@ -58,22 +58,22 @@
       hovertext: ids.map(i => `<b>#${G.D.articles[i].id}</b> C${lab[i]} · ${deg.get(i)} links<br>${G.esc(G.D.articles[i].title.slice(0, 90))}`), hoverinfo: 'text' });
     Plotly.react('cnet', tr, { uirevision: V.ids.join(','), margin: { l: 10, r: 10, t: 10, b: 10 }, xaxis: { visible: false }, yaxis: { visible: false, scaleanchor: 'x' }, showlegend: false, annotations: ann, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { color: ink } }, { displaylogo: false, responsive: true, modeBarButtonsToRemove: ['select2d', 'lasso2d'] });
     const el = $('cnet'); if (el.removeAllListeners) el.removeAllListeners('plotly_click');
-    el.on('plotly_click', e => { const p = e.points.find(x => x.customdata != null); if (p) { focus = p.customdata; document.querySelector('input[name=cscope][value=focus]').checked = true; CI.render(); } });
+    el.on('plotly_click', e => { const p = e.points.find(x => x.customdata != null); if (p) { focus = p.customdata; document.querySelector('input[name=cscope][value=focus]').checked = true; G.measureUpdate(CI.render); } });
     // summary of the focus
     const a = G.D.articles[focus], out = E.filter(e => e[0] === focus).length, inn = E.filter(e => e[1] === focus).length;
     $('csummary').innerHTML = `<b>Focus: #${a.id}</b> ${G.esc(a.title)} (C${lab[focus]}) · cites ${out} and is cited by ${inn} of the retained articles${G.D.cited_by[focus] != null ? ` · ${G.D.cited_by[focus]} citations in total (OpenAlex)` : ''}. Showing ${V.ids.length} articles and ${V.edges.length} links. Arrows point from the citing to the cited article; yellow rim = model paper.`;
     // cluster matrix
     const k = Math.max(...lab), cnt = Array.from({ length: k }, () => new Array(k).fill(0)); E.forEach(([x, y]) => cnt[lab[x] - 1][lab[y] - 1]++);
     const meas = document.querySelector('input[name=cmeas]:checked').value, rows = cnt.map(r => { const s = r.reduce((u, v) => u + v, 0); return r.map(v => meas === 'share' ? (s ? v / s : 0) : v); });
-    Plotly.react('cmat', [{ type: 'heatmap', x: rows.map((_, i) => 'C' + (i + 1)), y: rows.map((_, i) => 'C' + (i + 1)), z: rows, text: rows.map(r => r.map(v => meas === 'share' ? Math.round(100 * v) + '%' : String(v))), texttemplate: '%{text}', hovertemplate: 'citing %{y} → cited %{x}: %{text}<extra></extra>', colorscale: [[0, '#F7FBFF'], [1, '#08519C']], showscale: false }],
-      { margin: { l: 50, r: 10, t: 24, b: 50 }, xaxis: { title: 'cited cluster', side: 'bottom' }, yaxis: { title: 'citing cluster', autorange: 'reversed' }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { color: ink } }, { displaylogo: false, responsive: true, displayModeBar: false });
+    G.lazyPlot('cmat', () => Plotly.react('cmat', [{ type: 'heatmap', x: rows.map((_, i) => 'C' + (i + 1)), y: rows.map((_, i) => 'C' + (i + 1)), z: rows, text: rows.map(r => r.map(v => meas === 'share' ? Math.round(100 * v) + '%' : String(v))), texttemplate: '%{text}', hovertemplate: 'citing %{y} → cited %{x}: %{text}<extra></extra>', colorscale: [[0, '#F7FBFF'], [1, '#08519C']], showscale: false }],
+      { margin: { l: 50, r: 10, t: 24, b: 50 }, xaxis: { title: 'cited cluster', side: 'bottom' }, yaxis: { title: 'citing cluster', autorange: 'reversed' }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { color: ink } }, { displaylogo: false, responsive: true, displayModeBar: false }));
     // edge table
     $('cedges').innerHTML = `<table class="t"><tr><th>Citing</th><th>Cluster</th><th>Cited</th><th>Cluster</th></tr>${V.edges.map(([x, y]) => `<tr><td>#${G.D.articles[x].id} ${G.esc(G.D.articles[x].title.slice(0, 90))}</td><td>C${lab[x]}</td><td>#${G.D.articles[y].id} ${G.esc(G.D.articles[y].title.slice(0, 90))}</td><td>C${lab[y]}</td></tr>`).join('')}</table>`;
   };
   CI.setup = function () {
     prepare();
-    $('cfocus').onchange = e => { focus = +e.target.value; document.querySelector('input[name=cscope][value=focus]').checked = true; CI.render(); };
-    document.querySelectorAll('input[name=cscope],input[name=cmeas]').forEach(r => r.onchange = CI.render);
-    $('cdepth').onchange = $('clab').onchange = CI.render;
+    $('cfocus').onchange = e => { focus = +e.target.value; document.querySelector('input[name=cscope][value=focus]').checked = true; G.measureUpdate(CI.render); };
+    document.querySelectorAll('input[name=cscope],input[name=cmeas]').forEach(r => r.onchange = () => G.measureUpdate(CI.render));
+    $('cdepth').onchange = $('clab').onchange = () => G.measureUpdate(CI.render);
   };
 })();

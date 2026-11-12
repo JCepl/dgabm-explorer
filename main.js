@@ -6,7 +6,7 @@
   function show(t) {
     cur = t; document.querySelectorAll('nav a[data-tab]').forEach(a => a.classList.toggle('on', a.dataset.tab === t));
     document.querySelectorAll('.tab').forEach(s => s.classList.toggle('on', s.id === 'tab-' + t));
-    if (dirty.has(t)) { dirty.delete(t); mods[t].render(); }
+    if (dirty.has(t)) { dirty.delete(t); G.measureUpdate(() => mods[t].render()); }
     if (location.hash !== '#' + t) history.replaceState(null, '', '#' + t);
     window.dispatchEvent(new Event('resize'));
   }
@@ -17,10 +17,10 @@
     if (renderFrame !== null) return;
     renderFrame = requestAnimationFrame(() => {
       renderFrame = null;
-      if (dirty.has(cur)) { dirty.delete(cur); mods[cur].render(); }
+      if (dirty.has(cur)) { dirty.delete(cur); G.measureUpdate(() => mods[cur].render()); }
     });
   });
-  G.on('view', () => { if (cur === 'pca') G.pca.renderView(); else dirty.add('pca'); });
+  G.on('view', () => { if (cur === 'pca') G.measureUpdate(() => G.pca.renderView()); else dirty.add('pca'); });
   document.querySelectorAll('nav a[data-tab]').forEach(a => a.onclick = () => show(a.dataset.tab));
   const start = (location.hash || '#pca').slice(1); show(mods[start] ? start : 'pca');
   G.$('foot').textContent = `Data exported ${G.D.generated} from the R pipeline · ${G.n} articles · all analysis runs in your browser (PCA, Ward clustering and silhouettes agree with R to ~1e-12).`;

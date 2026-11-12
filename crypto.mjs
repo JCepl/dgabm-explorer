@@ -27,11 +27,14 @@ export async function encryptJson(value, password) {
   const salt = crypto.getRandomValues(new Uint8Array(16));
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveKey(password, salt);
+  // Compress repetitive text before encryption to keep unlock downloads small.
+  const compressed = await new Response(new Blob([JSON.stringify(value)]).stream()
+    .pipeThrough(new CompressionStream('gzip'))).arrayBuffer();
   const ciphertext = await crypto.subtle.encrypt(
     { name: 'AES-GCM', iv, additionalData: context, tagLength: 128 },
-    key, encoder.encode(JSON.stringify(value))
+    key, compressed
   );
-  return { version: 1, cipher: 'AES-256-GCM', kdf: 'PBKDF2-SHA256', iterations: ITERATIONS,
+  return { version: 1, compression: 'gzip', cipher: 'AES-256-GCM', kdf: 'PBKDF2-SHA256', iterations: ITERATIONS,
     salt: toBase64(salt), iv: toBase64(iv), ciphertext: toBase64(new Uint8Array(ciphertext)) };
 }
 
@@ -45,5 +48,8 @@ export async function decryptJson(packet, password) {
     { name: 'AES-GCM', iv: fromBase64(packet.iv), additionalData: context, tagLength: 128 },
     key, fromBase64(packet.ciphertext)
   );
-  return JSON.parse(new TextDecoder().decode(plaintext));
+  const content = packet.compression === 'gzip'
+    ? await new Response(new Blob([plaintext]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer()
+    : plaintext; // Existing encrypted releases without compression still open.
+  return JSON.parse(new TextDecoder().decode(content));
 }

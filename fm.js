@@ -40,12 +40,14 @@
   // generic heatmap: keys (ordered), Z (values), optional tree {merges, order}
   function heat(el, keys, Z, o) {
     const m = keys.length, text = keys.map((a, i) => keys.map((b, j) => o.hover(i, j)));
-    const lbls = keys.map(k => `<span style="color:${G.GCOL[G.F[k].group]}">${G.esc(lab(k))}</span>`);
+    const lbls = keys.map(k => `<span style="color:${G.GCOL[G.F[k].group]}">${G.esc(lab(k).length > 24 ? lab(k).slice(0, 22) + '…' : lab(k))}</span>`);
     const tr = [{ type: 'heatmap', x: keys.map((_, i) => i), y: keys.map((_, i) => i), z: Z, text, hoverinfo: 'text', colorscale: o.scale, zmin: o.zmin, zmax: o.zmax, xaxis: 'x', yaxis: 'y', xgap: 0, ygap: 0, colorbar: { orientation: 'h', x: 1, xanchor: 'right', y: 1.0, yanchor: 'bottom', len: 0.3, thickness: 10, title: { text: o.cbar, side: 'top' } } }];
     const dom = o.tree ? { x: [0.1, 0.93], y: [0, 0.87] } : { x: [0.0, 0.93], y: [0, 1] };
-    const lay = { margin: { l: o.tree ? 10 : 190, r: o.tree ? 200 : 10, t: 80, b: 230 }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { size: 11, color: G.font() },
+    const labelStep = Math.max(1, Math.ceil(m * 11 / Math.max(100, $(el).clientHeight - 180)));
+    const yTicks = keys.map((_, i) => i).filter(i => i % labelStep === 0);
+    const lay = { margin: { l: o.tree ? 10 : 155, r: o.tree ? 165 : 10, t: 30, b: 120 }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { size: 9, color: G.font() },
       xaxis: { domain: dom.x, tickmode: 'array', tickvals: keys.map((_, i) => i), ticktext: lbls, tickangle: 90, range: [-0.5, m - 0.5], showgrid: false, zeroline: false, automargin: false },
-      yaxis: { domain: dom.y, tickmode: 'array', tickvals: keys.map((_, i) => i), ticktext: lbls, range: [m - 0.5, -0.5], showgrid: false, zeroline: false, side: o.tree ? 'right' : 'left', automargin: false }, shapes: [], showlegend: false };
+      yaxis: { domain: dom.y, tickmode: 'array', tickvals: yTicks, ticktext: yTicks.map(i => lbls[i]), range: [m - 0.5, -0.5], showgrid: false, zeroline: false, side: o.tree ? 'right' : 'left', automargin: false }, shapes: [], showlegend: false };
     if (o.bounds) o.bounds.forEach(b => { lay.shapes.push({ type: 'line', x0: b - 0.5, x1: b - 0.5, y0: -0.5, y1: m - 0.5, line: { color: '#fff', width: 3 } }, { type: 'line', y0: b - 0.5, y1: b - 0.5, x0: -0.5, x1: m - 0.5, line: { color: '#fff', width: 3 } }); });
     if (o.tree) {
       const pos = new Map(o.tree.order.map((l, i) => [l, i])), d = dendLines(o.tree.merges, m, pos);
@@ -110,7 +112,7 @@
     const both = ids[1][1]; html += `<details style="margin-top:8px"><summary>Articles with both (${both.length})</summary><p class="help">${both.map(i => `#${G.D.articles[i].id} ${G.esc(G.D.articles[i].title.slice(0, 80))}`).join('<br>') || 'none'}</p></details>`;
     $('crossout').innerHTML = html;
   }
-  function openCross(a, b) { $('fa').value = a; $('fb').value = b; cross(); const d = $('crossbox'); d.open = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  function openCross(a, b) { $('fa').value = a; $('fb').value = b; cross(); const d = $('crossbox'); d.open = true; }
 
   // ------------------------------------------------------------- wiring
   FM.render = function () {
@@ -123,8 +125,8 @@
   };
   FM.setup = function () {
     prepare();
-    $('fmtabs').querySelectorAll('button').forEach(b => b.onclick = () => { sub = b.dataset.s; $('fmtabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('.sub').forEach(s => s.classList.toggle('on', s.id === 'fm' + sub)); FM.render(); });
-    document.querySelectorAll('input[name=resc]').forEach(r => r.onchange = () => { built[4] = false; FM.render(); });
+    $('fmtabs').querySelectorAll('button').forEach(b => b.onclick = () => { sub = b.dataset.s; $('fmtabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('.sub').forEach(s => s.classList.toggle('on', s.id === 'fm' + sub)); G.measureUpdate(FM.render); window.dispatchEvent(new Event('resize')); });
+    document.querySelectorAll('input[name=resc]').forEach(r => r.onchange = () => { built[4] = false; G.measureUpdate(FM.render); window.dispatchEvent(new Event('resize')); });
     $('fa').onchange = $('fb').onchange = cross; $('fm-dl-all').onclick = () => dl(false); $('fm-dl-tick').onclick = () => dl(true); cross();
   };
 })();

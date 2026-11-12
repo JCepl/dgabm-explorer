@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css"></head><body class="locked">
+<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=120db72f7ed0"></head><body class="locked">
 <nav>
   <span class="brand">DG-ABM article explorer</span>
   <a data-tab="pca" class="on">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data dictionary</a>
@@ -19,7 +19,7 @@
 <main>
 
 <section id="tab-pca" class="tab on">
-  <div class="bar">
+  <div class="bar pca-toolbar">
     <div class="row">
       <div class="pills" id="scope"><button data-s="inputs" class="on">Inputs only</button><button data-s="all">Inputs + outputs</button><button data-s="outputs">Outputs only</button></div>
       <label>Clusters k <select id="k"></select></label>
@@ -29,39 +29,55 @@
       <label id="topw">top <select id="topn"><option>3</option><option>5</option><option selected>7</option><option>10</option><option>15</option></select></label>
       <label><input type="checkbox" id="d3"> 3D</label>
     </div>
-    <div class="notes" id="scopenote"></div>
-    <div class="notes" id="note"></div>
+    <div class="status-row"><span id="quickstats"></span><details class="method-notes"><summary>Method &amp; warnings</summary><div class="method-body"><div class="notes" id="scopenote"></div><div class="notes" id="note"></div></div></details></div>
   </div>
-  <div class="grid2">
-    <div><h4>PCA map</h4><p class="panel-help">Papers by PC1 and PC2, coloured by cluster. Rings mark the 27 model papers. Hover or click a paper.</p><div class="panel" id="pca" style="height:620px"></div></div>
-    <div><h4>Hierarchy</h4><p class="panel-help">Ward.D2 on the PCs. Each leaf is a paper (yellow = model papers). Click a fork to re-cut the tree, a leaf to inspect the paper.</p><svg id="dend"></svg><div class="split" id="fork">Click a fork circle.</div></div>
-  </div>
-  <div class="card" id="info" style="margin-top:14px"><h4>Paper inspector</h4><p class="help">Click any paper in the map or a leaf in the tree to inspect it here.</p></div>
-  <div class="card">
+  <div class="workspace">
+  <aside class="card feature-panel" id="feature-panel">
     <h4>Features used</h4>
-    <p class="help">Click a feature to switch it on or off; everything recomputes. <a href="#" id="r20">Restore the 20-feature set of the stored results</a> · <a href="#" id="rst">startup set</a> · <a href="#" id="rw">reset weights</a>.</p>
+    <p class="help">Click a feature to include it. <a href="#" id="r20">Stored 20</a> · <a href="#" id="rst">Startup</a> · <a href="#" id="rw">Reset weights</a>.</p>
     <div class="notes" id="featnote"></div>
-    <div class="wmode"><label><input type="checkbox" id="wmode"> Weight mode: click a ticked feature to add +1 to its weight (shift-click: -1). A small +X appears on the chip.</label></div>
+    <div class="wmode"><label><input type="checkbox" id="wmode"> Weight mode: click +1; shift-click −1.</label></div>
     <div class="chipgrid" id="chips"></div>
-    <details style="margin-top:12px" id="wdetails"><summary>Exact weights and category weights (optional - weight mode above is quicker)</summary>
+</aside>
+    <div class="pca-stage">
+      <div class="workspace-tabs" id="workspace-tabs" role="tablist" aria-label="PCA views">
+        <button data-view="map" class="on" role="tab" aria-selected="true">Map &amp; hierarchy</button>
+        <button data-view="fit" role="tab" aria-selected="false">Loadings &amp; fit</button>
+        <button data-view="clusters" role="tab" aria-selected="false">Clusters &amp; splits</button>
+        <button data-view="weights" role="tab" aria-selected="false">Weights &amp; screening</button>
+        <button data-view="summary" role="tab" aria-selected="false">Summary map</button>
+        <button class="feature-toggle" id="feature-toggle">Features</button>
+      </div>
+      <div id="view-map" class="workspace-view on" role="tabpanel">
+        <div class="map-grid">
+          <div class="plot-card"><h4>PCA map</h4><p class="panel-help">Hover or click a paper. Gold rings mark model papers.</p><div class="panel" id="pca"></div></div>
+          <div class="plot-card"><h4>Hierarchy</h4><p class="panel-help">Click a fork to choose k; click a leaf to inspect a paper.</p><svg id="dend"></svg><div class="split" id="fork">Click a fork circle.</div></div>
+        </div>
+        <div class="card" id="info"><h4>Paper inspector</h4><p class="help">Click a paper in either plot to inspect it.</p></div>
+      </div>
+      <div id="view-fit" class="workspace-view fit-grid" role="tabpanel">
+        <div class="plot-card"><h4>PCA loadings</h4><label>Component <select id="pcsel"></select></label><div class="panel" id="loadplot"></div></div>
+        <div class="plot-card"><h4>Average silhouette by k</h4><p class="panel-help">Click a point to choose k.</p><div class="panel" id="sil"></div></div>
+      </div>
+      <div id="view-clusters" class="workspace-view view-scroll" role="tabpanel">  <h3>Clusters at this k</h3><p class="help">Size, mean silhouette, the most prevalent coded features in each cluster, and the features whose prevalence differs most from the remaining papers (percentage points).</p><div id="ctab"></div>
+  <h3>Sequence of splits</h3><p class="help">Each row is the fork that turns k-1 clusters into k, over the whole offered range.</p><div id="stab"></div>
+</div>
+      <div id="view-weights" class="workspace-view view-scroll" role="tabpanel">    <details style="margin-top:12px" id="wdetails"><summary>Exact weights</summary>
       <p class="help" style="margin-top:8px">A weight says how much a feature counts in the PCA. Every ticked feature is standardized, then multiplied by the square root of its weight, so its share of the variance is proportional to the weight: 1 = normal, 2 = counts double, 0.5 = half, 0 = left out.</p>
       <div class="row"><button class="btn" id="wbox-eq">Equal weight per category</button><button class="btn" id="wbox-reset">Reset all weights to 1</button></div><div id="wbox"></div></details>
-    <details style="margin-top:10px" id="sugbox"><summary>Suggest what to tick, by statistics (click to expand)</summary>
+    <details style="margin-top:10px" id="sugbox"><summary>Suggest features</summary>
       <p class="help" style="margin-top:8px">Three screening steps on the features of the current scope: (1) prevalence of 0/1 features, (2) redundancy with an already kept feature, (3) communality on the PCs covering 70% of the variance. Each threshold can be changed.</p>
       <div class="row"><label>1. Min. prevalence (%) <b id="sg1v">5</b><br><input type="range" id="sg1" min="1" max="15" step="1" value="5"></label><label>2. Drop when |r| ≥ <b id="sg2v">0.90</b><br><input type="range" id="sg2" min="0.6" max="1" step="0.01" value="0.9"></label><label>3. Min. communality <b id="sg3v">0.50</b><br><input type="range" id="sg3" min="0" max="0.9" step="0.01" value="0.5"></label></div>
       <p class="notes" id="sugsum"></p><button class="btn" id="sugapply">Tick the suggestion (IN set) for this scope</button><div class="scroll" id="sugtable" style="max-height:420px;margin-top:8px"></div></details>
   </div>
-  <div class="grid2">
-    <div><h3 style="margin-top:6px">PCA loadings</h3><label>Component <select id="pcsel"></select></label><div class="panel" id="loadplot" style="height:400px;margin-top:6px"></div></div>
-    <div><h3 style="margin-top:6px">Average silhouette by k</h3><div class="panel" id="sil" style="height:440px"></div></div>
-  </div>
-  <h3>Clusters at this k</h3><p class="help">Size, mean silhouette, the most prevalent coded features in each cluster, and the features whose prevalence differs most from the remaining papers (percentage points).</p><div id="ctab"></div>
-  <h3>Sequence of splits</h3><p class="help">Each row is the fork that turns k-1 clusters into k, over the whole offered range.</p><div id="stab"></div>
-  <h3>Summary map: a semi-subjective 3D view of all source papers</h3>
+      <div id="view-summary" class="workspace-view view-scroll" role="tabpanel">  <h3>Summary map: a semi-subjective 3D view of all source papers</h3>
   <div class="card"><p class="help">A transparent interpretive map, not PCA. Drag to rotate, scroll to zoom, hover for a paper, click a point to inspect it. Small offsets separate papers with the same categorical scores. Coloured points are retained, grey points are excluded from PCA/clustering. It loads when you scroll here.</p>
   <div class="grid2" style="grid-template-columns:repeat(3,1fr);gap:12px"><div><b>X - inferred field</b><br><span class="help">Evolutionary theory → genetics → eco-evolutionary ecology → conservation → applied management.</span></div><div><b>Y - initial genetic detail</b><br><span class="help">Abstract/infinitesimal → locus/QTL detail → correlations/structure → LD, dominance or epistasis.</span></div><div><b>Z - study style</b><br><span class="help">Conceptual → scenarios → quantitative experiments → empirical parameterization → calibration/projection.</span></div></div></div>
-  <div class="panel" id="sum3d" style="height:720px"><div class="skeleton" style="height:100%">Scroll here to load the 3D map…</div></div>
+  <div class="panel" id="sum3d" style="height:100%"><div class="skeleton" style="height:100%">Scroll here to load the 3D map…</div></div>
   <div class="card" id="suminfo" style="margin-top:12px"><h4>3D-map paper inspector</h4><p class="help">Click any point in the 3D map.</p></div>
+</div>
+    </div>
+  </div>
 </section>
 
 <section id="tab-fm" class="tab">
@@ -78,7 +94,8 @@
 </section>
 
 <section id="tab-cite" class="tab">
-  <div class="grid2" style="grid-template-columns:300px minmax(0,1fr)">
+  <div class="workspace-tabs" id="citation-tabs"><button data-cview="network" class="on">Network</button><button data-cview="matrix">Cluster matrix</button><button data-cview="links">Citation links</button></div>
+  <div id="citation-network" class="citation-view on">  <div class="grid2" style="grid-template-columns:300px minmax(0,1fr)">
     <div class="card">
       <label>Focus study<br><select id="cfocus" style="width:100%"></select></label><br><br>
       <b>Network scope</b><br><label><input type="radio" name="cscope" value="all" checked> All connected studies</label><br><label><input type="radio" name="cscope" value="focus"> Focused neighbourhood</label>
@@ -89,11 +106,14 @@
     </div>
     <div><h3 style="margin-top:0">Citation network</h3><div class="notes" id="csummary"></div><div class="panel" id="cnet" style="height:660px"></div></div>
   </div>
-  <div class="grid2" style="grid-template-columns:300px minmax(0,1fr);margin-top:14px">
+</div>
+  <div id="citation-matrix" class="citation-view">  <div class="grid2" style="grid-template-columns:300px minmax(0,1fr);margin-top:14px">
     <div class="card"><b>Cluster matrix shows</b><br><label><input type="radio" name="cmeas" value="count" checked> Number of citation links</label><br><label><input type="radio" name="cmeas" value="share"> Share of citing cluster's links</label><p class="help">Rows do the citing; columns receive the citations.</p></div>
     <div><h3 style="margin-top:0">Cross-citing among groups</h3><div class="panel" id="cmat" style="height:520px"></div></div>
   </div>
-  <h3>Citation links</h3><div id="cedges"></div>
+</div>
+  <div id="citation-links" class="citation-view view-scroll">  <h3>Citation links</h3><div id="cedges"></div>
+</div>
 </section>
 
 <section id="tab-dict" class="tab">
@@ -106,4 +126,4 @@
 <footer id="foot"></footer>
 
 
-<script type="module" src="unlock.js"></script></body></html>
+<script type="module" src="unlock.js?v=120db72f7ed0"></script></body></html>

@@ -58,16 +58,16 @@
     window.__lastDim = three;
     for (let c = 1; c <= k; c++) {
       const ids = [...lab].map((l, i) => l === c ? i : -1).filter(i => i >= 0); if (!ids.length) continue;
-      if (!three && ids.length >= 4) { const e = ellipse(ids.map(i => [p.scores[i][0], p.scores[i][1]]), 0.68); tr.push({ x: e.map(v => v[0]), y: e.map(v => v[1]), type: 'scatter', mode: 'lines', fill: 'toself', fillcolor: ci(c) + '22', line: { width: 0 }, hoverinfo: 'skip', showlegend: false }); }
+      if (!three && ids.length >= 4) { const e = ellipse(ids.map(i => [p.scores[i][0], p.scores[i][1]]), 0.68); tr.push({ x: e.map(v => v[0]), y: e.map(v => v[1]), type: 'scatter', mode: 'lines', fill: 'toself', fillcolor: ci(c) + '12', line: { width: 0 }, hoverinfo: 'skip', showlegend: false }); }
       const mk = i => st.mark && G.D.articles[i].model;
-      const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c + (G.isRecommended() ? ' · ' + G.preset.labels[c - 1] : ''), type: three ? 'scatter3d' : 'scatter', mode: 'markers+text',
-        textfont: { size: three ? 9 : 8, color: '#fff' }, marker: { color: ci(c), size: ids.map(i => mk(i) ? (three ? 13 : 21) : (three ? 10 : 16)), line: { color: ids.map(i => mk(i) ? '#FFD166' : '#fff'), width: ids.map(i => mk(i) ? 3 : 1) } } };
+      const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c + (G.isRecommended() ? ' · ' + G.preset.labels[c - 1] : ''), type: three ? 'scatter3d' : 'scatter', mode: 'markers',
+        textfont: { size: three ? 9 : 8, color: '#fff' }, marker: { color: ci(c), size: ids.map(i => mk(i) ? (three ? 10 : 12) : (three ? 7 : 8)), line: { color: ids.map(i => mk(i) ? '#FFD166' : '#fff'), width: ids.map(i => mk(i) ? 2 : .6) } } };
       if (three) { t.z = ids.map(i => p.scores[i][2]); t.marker.line = { color: '#fff', width: 1 }; }
       tr.push(t);
-      if (!three) ann.push({ x: G.mean(ids.map(i => p.scores[i][0])), y: G.mean(ids.map(i => p.scores[i][1])), text: '<b>C' + c + '</b>', showarrow: false, font: { size: 13, color: ci(c) }, bgcolor: 'rgba(255,255,255,.85)', bordercolor: ci(c), borderpad: 2 });
+      if (!three) ann.push({ x: G.mean(ids.map(i => p.scores[i][0])), y: G.mean(ids.map(i => p.scores[i][1])), text: 'C' + c, showarrow: false, font: { size: 10, color: ci(c) }, bgcolor: 'rgba(255,255,255,.65)', borderpad: 1 });
     }
     const axT = j => `PC${j + 1} (${p.explained[j].toFixed(1)}%)`;
-    const layout = { uirevision: R.key, margin: { l: 48, r: 8, t: 38, b: 48 }, legend: { orientation: 'h', y: 1.02, yanchor: 'bottom', font: { size: 9 } }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { color: ink } };
+    const layout = { uirevision: R.key, margin: { l: 48, r: 8, t: 38, b: 48 }, legend: { orientation: 'h', y: 1.02, yanchor: 'bottom', font: { size: 9 } }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { size: 10, color: '#73818b' } };
     if (three) layout.scene = { xaxis: { title: axT(0) }, yaxis: { title: axT(1) }, zaxis: { title: axT(2) } };
     else {
       layout.xaxis = { title: axT(0), zeroline: true, zerolinecolor: '#dde3e8', gridcolor: '#f0f3f6' }; layout.yaxis = { title: axT(1), zeroline: true, zerolinecolor: '#dde3e8', gridcolor: '#f0f3f6' };
@@ -75,8 +75,8 @@
         const L = R.feats.map((f, i) => ({ f, a: p.loadings[0][i], b: p.loadings[1][i] })).sort((u, v) => (v.a ** 2 + v.b ** 2) - (u.a ** 2 + u.b ** 2)).slice(0, st.topn);
         const mx = Math.max(...p.scores.map(r => Math.abs(r[0]))), my = Math.max(...p.scores.map(r => Math.abs(r[1])));
         const sc = 0.72 * Math.min(mx / Math.max(...L.map(l => Math.abs(l.a))), my / Math.max(...L.map(l => Math.abs(l.b))));
-        L.forEach(l => { ann.push({ x: l.a * sc, y: l.b * sc, ax: 0, ay: 0, axref: 'x', ayref: 'y', xref: 'x', yref: 'y', showarrow: true, arrowhead: 2, arrowsize: 1, arrowwidth: 1.4, arrowcolor: '#37474F', text: '' });
-          ann.push({ x: l.a * sc * 1.06, y: l.b * sc * 1.06, xref: 'x', yref: 'y', showarrow: false, text: '<b>' + G.esc(G.F[l.f].label) + '</b>', font: { size: 10, color: '#263238' }, bgcolor: 'rgba(255,255,255,.7)' }); });
+        L.forEach(l => { ann.push({ x: l.a * sc, y: l.b * sc, ax: 0, ay: 0, axref: 'x', ayref: 'y', xref: 'x', yref: 'y', showarrow: true, arrowhead: 2, arrowsize: 1, arrowwidth: .8, arrowcolor: '#8c9aa4', text: '' });
+          ann.push({ x: l.a * sc * 1.06, y: l.b * sc * 1.06, xref: 'x', yref: 'y', showarrow: false, text: G.esc(G.F[l.f].label), font: { size: 9, color: '#687984' }, bgcolor: 'rgba(255,255,255,.55)' }); });
       }
       layout.annotations = ann;
     }

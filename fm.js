@@ -82,7 +82,7 @@
     const div = $(el); if (div.removeAllListeners) div.removeAllListeners('plotly_click');
     div.on('plotly_click', e => { const p = e.points.find(x => (x.data.type === 'heatmap' || x.data.mode === 'text')); if (!p) return; openCross(keys[Math.round(p.y)], keys[Math.round(p.x)]); });
   }
-  const BLUES = [[0, '#F7FBFF'], [1, '#08519C']], DIV = [[0, '#B2182B'], [.5, '#F7F7F7'], [1, '#2166AC']];
+  const BLUES = [[0, '#F7FBFF'], [1, '#08519C']], DIV = [[0, '#B2182B'], [.5, '#F7F7F7'], [1, '#2166AC']], CORRELATION = [[0, '#2166AC'], [.5, '#FFFFFF'], [1, '#B2182B']];
   const idx = keys => keys.map(k => K.indexOf(k));
   const hoverCount = (keys, extra) => (i, j) => { const a = keys[i], b = keys[j], ia = K.indexOf(a), ib = K.indexOf(b); const exp = own[ia] * own[ib] / G.n;
     return `<b>${G.esc(lab(a))}</b> × <b>${G.esc(lab(b))}</b><br>both: ${counts[ia][ib]} articles (${a === b ? 'own n' : 'expected if independent: ' + exp.toFixed(1)})<br>${G.esc(lab(a))}: ${own[ia]} · ${G.esc(lab(b))}: ${own[ib]}` + (extra ? '<br>' + extra(i, j) : '') + '<br><i>click: cross these two features</i>'; };
@@ -106,7 +106,7 @@
     let values, tree, scale, zmin, zmax, note, shown, cbar, skipDiag = false;
     if (method === 'share') { values = V.map((r, i) => r.map((v, j) => v)); const cl = values.map((r, i) => r.map((v, j) => i === j ? 0 : v)); tree = treeFrom(euclidRows(cl)); scale = BLUES; zmin = 0; zmax = 1; cbar = 'share'; shown = (v) => Math.round(100 * v) + '% of the row feature\'s articles';
       note = 'Each row is divided by its own n, so every feature is a row of percentages: of the articles that have the ROW feature, how many also have the COLUMN feature. Rare and common features are now comparable, but the matrix is not symmetric. Clustering: Euclidean distance between rows, average linkage.'; }
-    else if (method === 'phi') { values = counts.map((r, i) => Array.from(r, (c, j) => { const pa = own[i] / G.n, pb = own[j] / G.n, den = Math.sqrt(pa * (1 - pa) * pb * (1 - pb)); return den ? (c / G.n - pa * pb) / den : 0; })); const D = new Float64Array(nF * nF); values.forEach((r, i) => r.forEach((v, j) => D[i * nF + j] = i === j ? 0 : 1 - v)); tree = treeFromD(D); scale = DIV; zmin = -1; zmax = 1; cbar = 'phi'; skipDiag = true; shown = v => 'phi x100 = ' + Math.round(100 * v);
+    else if (method === 'phi') { values = counts.map((r, i) => Array.from(r, (c, j) => { const pa = own[i] / G.n, pb = own[j] / G.n, den = Math.sqrt(pa * (1 - pa) * pb * (1 - pb)); return den ? (c / G.n - pa * pb) / den : 0; })); const D = new Float64Array(nF * nF); values.forEach((r, i) => r.forEach((v, j) => D[i * nF + j] = i === j ? 0 : 1 - v)); tree = treeFromD(D); scale = CORRELATION; zmin = -1; zmax = 1; cbar = 'phi'; skipDiag = true; shown = v => 'phi x100 = ' + Math.round(100 * v);
       note = 'Phi = Pearson correlation of two 0/1 features (x100): +100 always together, 0 unrelated, -100 never together. It is already corrected for how common each feature is. Clustering: 1 - phi, average linkage.'; }
     else { values = counts.map((r, i) => Array.from(r, (c, j) => i === j ? 0 : Math.log2((c + 0.5) / (own[i] * own[j] / G.n + 0.5)))); tree = treeFrom(euclidRows(values)); scale = DIV; zmin = -3; zmax = 3; cbar = 'log2 lift'; skipDiag = true; shown = v => 'log2 lift = ' + v.toFixed(1);
       note = 'Lift = observed co-occurrence divided by what would be expected if the two features were independent (log2 scale, +0.5 added to avoid log of zero, clipped at ±3). +1 = twice as often as expected, -1 = half as often. Clustering: Euclidean distance between rows, average linkage.'; }
@@ -123,7 +123,7 @@
     let order = vars.map((_, i) => i), tree;
     if (clustered) { const Dm = new Float64Array(m * m); for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) Dm[i * m + j] = i === j ? 0 : Math.max(0, 1 - (absD ? Math.abs(R[i][j]) : R[i][j])); const merges = G.C.upgma(Dm, m); order = G.C.leafOrder(merges, m); tree = { merges, order }; }
     const keys = order.map(i => vars[i].k), Z = order.map(a => order.map(b => R[a][b]));
-    heat('traitcorr', keys, Z, { scale: DIV, zmin: -1, zmax: 1, cbar: 'Pearson r', tree, format: v => Math.abs(v) < .005 ? '0.00' : v.toFixed(2),
+    heat('traitcorr', keys, Z, { scale: CORRELATION, zmin: -1, zmax: 1, cbar: 'Pearson r', tree, format: v => Math.abs(v) < .005 ? '0.00' : v.toFixed(2),
       hover: (i, j) => `<b>${G.esc(lab(keys[i]))}</b> × <b>${G.esc(lab(keys[j]))}</b><br>r = ${Z[i][j].toFixed(3)}${keys[i] === keys[j] ? ' (diagonal)' : ''}<br><i>click: cross these two features (0/1 features only)</i>` });
   }
   function euclidRows(R) { const m = R.length, D = new Float64Array(m * m); for (let i = 0; i < m; i++) for (let j = i + 1; j < m; j++) { let s = 0; for (let k = 0; k < R[i].length; k++) s += (R[i][k] - R[j][k]) ** 2; D[i * m + j] = D[j * m + i] = Math.sqrt(s); } return D; }

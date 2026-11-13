@@ -1,7 +1,7 @@
 // Downloads are built from a frozen click-time state, not the opening preset.
 (function () {
   const E = G.exports = {}, $ = G.$;
-  const figureNames = {pca:'PCA map',dend:'Hierarchy',loadplot:'PCA loadings',cooc:'Co-occurrence',clus:'Clustered co-occurrence',resc:'Rescaled clustering',cnet:'Citation network',cmat:'Citation matrix'};
+  const figureNames = {pca:'PCA map',dend:'Hierarchy',loadplot:'PCA loadings',cooc:'Co-occurrence',clus:'Clustered co-occurrence',resc:'Rescaled clustering',traitcorr:'Trait correlations',cnet:'Citation network',cmat:'Citation matrix'};
   const json = value => JSON.stringify(value, (_,v) => ArrayBuffer.isView(v) ? Array.from(v) : v, 2);
   const clone = value => JSON.parse(json(value));
   const csv = rows => rows.map(row => row.map(value => {

@@ -42,23 +42,31 @@
     const m = keys.length, text = keys.map((a, i) => keys.map((b, j) => o.hover(i, j)));
     const lbls = keys.map(k => `<span style="color:${G.GCOL[G.F[k].group]}">${G.esc(lab(k).length > 24 ? lab(k).slice(0, 22) + '…' : lab(k))}</span>`);
     const tr = [{ type: 'heatmap', x: keys.map((_, i) => i), y: keys.map((_, i) => i), z: Z, text, hoverinfo: 'text', colorscale: o.scale, zmin: o.zmin, zmax: o.zmax, xaxis: 'x', yaxis: 'y', xgap: 0, ygap: 0, colorbar: { orientation: 'h', x: 1, xanchor: 'right', y: 1.0, yanchor: 'bottom', len: 0.3, thickness: 10, title: { text: o.cbar, side: 'top' } } }];
-    const dom = o.tree ? { x: [0.1, 0.93], y: [0, 0.87] } : { x: [0.0, 0.93], y: [0, 1] };
-    const labelStep = Math.max(1, Math.ceil(m * 11 / Math.max(100, $(el).clientHeight - 180)));
-    const yTicks = keys.map((_, i) => i).filter(i => i % labelStep === 0);
-    const lay = { margin: { l: o.tree ? 10 : 155, r: o.tree ? 165 : 10, t: 30, b: 120 }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { size: 9, color: G.font() },
-      xaxis: { domain: dom.x, tickmode: 'array', tickvals: keys.map((_, i) => i), ticktext: lbls, tickangle: 90, range: [-0.5, m - 0.5], showgrid: false, zeroline: false, automargin: false },
-      yaxis: { domain: dom.y, tickmode: 'array', tickvals: yTicks, ticktext: yTicks.map(i => lbls[i]), range: [m - 0.5, -0.5], showgrid: false, zeroline: false, side: o.tree ? 'right' : 'left', automargin: false }, shapes: [], showlegend: false };
+    // A fixed cell size keeps the matrix square and its numbers readable.
+    const side=Math.ceil(m*32/(o.tree ? .88 : 1)+220),dom=o.tree?{x:[.12,1],y:[0,.88]}:{x:[0,1],y:[0,1]};
+    $(el).style.width=side+'px';$(el).style.height=side+'px';
+    const xs=[],ys=[],numbers=[],colours=[];
+    Z.forEach((row,i)=>row.forEach((v,j)=>{
+      if(v==null||!Number.isFinite(v))return;
+      xs.push(j);ys.push(i);numbers.push(o.format?o.format(v):String(v));
+      const scale=Math.max(0,Math.min(1,(v-o.zmin)/(o.zmax-o.zmin)));
+      colours.push(o.zmin<0?(scale<.22||scale>.78?'#fff':'#263238'):(scale>.55?'#fff':'#263238'));
+    }));
+    tr.push({type:'scatter',mode:'text',x:xs,y:ys,text:numbers,textfont:{size:9,color:colours},hoverinfo:'skip',showlegend:false});
+    const lay = {width:side,height:side,autosize:false,margin:{l:o.tree?20:190,r:o.tree?190:20,t:20,b:190},paper_bgcolor:'#fff',plot_bgcolor:'#fff',font:{size:10,color:G.font()},
+      xaxis:{domain:dom.x,tickmode:'array',tickvals:keys.map((_,i)=>i),ticktext:lbls,tickangle:90,range:[-.5,m-.5],showgrid:false,zeroline:false,automargin:false,constrain:'domain'},
+      yaxis:{domain:dom.y,tickmode:'array',tickvals:keys.map((_,i)=>i),ticktext:lbls,range:[m-.5,-.5],showgrid:false,zeroline:false,side:o.tree?'right':'left',automargin:false,scaleanchor:'x',scaleratio:1,constrain:'domain'},shapes:[],showlegend:false};
     if (o.bounds) o.bounds.forEach(b => { lay.shapes.push({ type: 'line', x0: b - 0.5, x1: b - 0.5, y0: -0.5, y1: m - 0.5, line: { color: '#fff', width: 3 } }, { type: 'line', y0: b - 0.5, y1: b - 0.5, x0: -0.5, x1: m - 0.5, line: { color: '#fff', width: 3 } }); });
     if (o.tree) {
       const pos = new Map(o.tree.order.map((l, i) => [l, i])), d = dendLines(o.tree.merges, m, pos);
       tr.push({ type: 'scatter', mode: 'lines', x: d.X, y: d.Y, xaxis: 'x2', yaxis: 'y2', line: { color: '#37474F', width: 1 }, hoverinfo: 'skip' });
       tr.push({ type: 'scatter', mode: 'lines', x: d.Y, y: d.X, xaxis: 'x3', yaxis: 'y3', line: { color: '#37474F', width: 1 }, hoverinfo: 'skip' });
-      lay.xaxis2 = { domain: dom.x, range: [-0.5, m - 0.5], visible: false, anchor: 'y2' }; lay.yaxis2 = { domain: [0.88, 1], range: [0, d.hmax * 1.02], visible: false, anchor: 'x2' };
-      lay.xaxis3 = { domain: [0, 0.09], range: [d.hmax * 1.02, 0], visible: false, anchor: 'y3' }; lay.yaxis3 = { domain: dom.y, range: [m - 0.5, -0.5], visible: false, anchor: 'x3' };
+      lay.xaxis2 = { domain: dom.x, range: [-0.5, m - 0.5], visible: false, anchor: 'y2' }; lay.yaxis2 = { domain: [0.90, 1], range: [0, d.hmax * 1.02], visible: false, anchor: 'x2' };
+      lay.xaxis3 = { domain: [0, 0.10], range: [d.hmax * 1.02, 0], visible: false, anchor: 'y3' }; lay.yaxis3 = { domain: dom.y, range: [m - 0.5, -0.5], visible: false, anchor: 'x3' };
     }
-    Plotly.react(el, tr, lay, { displaylogo: false, responsive: true, modeBarButtonsToRemove: ['select2d', 'lasso2d'] });
+    Plotly.react(el, tr, lay, { displaylogo: false, responsive: false, modeBarButtonsToRemove: ['select2d', 'lasso2d'] });
     const div = $(el); if (div.removeAllListeners) div.removeAllListeners('plotly_click');
-    div.on('plotly_click', e => { const p = e.points.find(x => x.data.type === 'heatmap'); if (!p) return; openCross(keys[Math.round(p.y)], keys[Math.round(p.x)]); });
+    div.on('plotly_click', e => { const p = e.points.find(x => (x.data.type === 'heatmap' || x.data.mode === 'text')); if (!p) return; openCross(keys[Math.round(p.y)], keys[Math.round(p.x)]); });
   }
   const BLUES = [[0, '#F7FBFF'], [1, '#08519C']], DIV = [[0, '#B2182B'], [.5, '#F7F7F7'], [1, '#2166AC']];
   const idx = keys => keys.map(k => K.indexOf(k));
@@ -90,7 +98,15 @@
       note = 'Lift = observed co-occurrence divided by what would be expected if the two features were independent (log2 scale, +0.5 added to avoid log of zero, clipped at ±3). +1 = twice as often as expected, -1 = half as often. Clustering: Euclidean distance between rows, average linkage.'; }
     $('rescnote').textContent = note;
     const ix = tree.order, keys = ix.map(i => K[i]), Z = ix.map(a => ix.map(b => (skipDiag && a === b) ? null : values[a][b]));
-    heat('resc', keys, Z, { scale, zmin, zmax, cbar, tree, hover: (i, j) => hoverCount(keys, (x, y) => (ix[x] === ix[y] && skipDiag) ? 'diagonal' : 'rescaled: ' + shown(values[ix[x]][ix[y]]))(i, j) });
+    heat('resc', keys, Z, { scale, zmin, zmax, cbar, tree, format: v => method==='share'?Math.round(100*v)+'%':v.toFixed(2), hover: (i, j) => hoverCount(keys, (x, y) => (ix[x] === ix[y] && skipDiag) ? 'diagonal' : 'rescaled: ' + shown(values[ix[x]][ix[y]]))(i, j) });
+  }
+  function traitCorr() {
+    const keys=K.filter(k=>G.F[k].group==='traits');
+    const Z=keys.map(a=>keys.map(b=>{
+      const i=K.indexOf(a),j=K.indexOf(b),pa=own[i]/G.n,pb=own[j]/G.n,den=Math.sqrt(pa*(1-pa)*pb*(1-pb));
+      return den?(counts[i][j]/G.n-pa*pb)/den:null;
+    }));
+    heat('traitcorr',keys,Z,{scale:DIV,zmin:-1,zmax:1,cbar:'Pearson r (phi)',format:v=>Math.abs(v)<.005?'0.00':v.toFixed(2),hover:(i,j)=>`<b>${G.esc(lab(keys[i]))}</b> × <b>${G.esc(lab(keys[j]))}</b><br>r = ${Z[i][j]?.toFixed(3)??'undefined (constant feature)'}<br>n = ${G.n}`});
   }
   function euclidRows(R) { const m = R.length, D = new Float64Array(m * m); for (let i = 0; i < m; i++) for (let j = i + 1; j < m; j++) { let s = 0; for (let k = 0; k < R[i].length; k++) s += (R[i][k] - R[j][k]) ** 2; D[i * m + j] = D[j * m + i] = Math.sqrt(s); } return D; }
   function treeFromD(D) { const merges = G.C.upgma(D, nF); return { merges, order: G.C.leafOrder(merges, nF) }; }
@@ -121,7 +137,7 @@
       if (!built[1]) { table(); built[1] = true; }
       else $('fmtable').querySelectorAll('input[data-k]').forEach(input => input.checked = G.st.ticks.has(input.dataset.k));
     }
-    else if (!built[sub]) { ({ 2: cooc, 3: clus, 4: resc })[sub](); built[sub] = true; }
+    else if (!built[sub]) { ({ 2: cooc, 3: clus, 4: resc, 5: traitCorr })[sub](); built[sub] = true; }
   };
   FM.setup = function () {
     prepare();

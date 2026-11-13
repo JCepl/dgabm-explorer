@@ -2,7 +2,7 @@
 (function () {
   const T = G.tableExports = {};
   T.names = {
-    all:'All tables', cluster_summary:'Cluster summary', splits:'Hierarchy splits', cluster_profiles:'Cluster feature profiles', screening:'Feature screening',
+    all:'All tables', trait_correlations:'Trait correlations', cluster_summary:'Cluster summary', splits:'Hierarchy splits', cluster_profiles:'Cluster feature profiles', screening:'Feature screening',
     scores:'PCA scores and memberships', loadings:'PCA loadings', variance:'Explained variance',
     feature_matrix:'Binary feature matrix', feature_statistics:'Feature frequencies and variance',
     cooccurrence:'Co-occurrence counts', clustered_cooccurrence:'Clustered co-occurrence counts',
@@ -27,6 +27,8 @@
     add('feature_matrix',['article_id',...keys],values.map((r,i)=>[D.articles[i].id,...r]));
     add('feature_statistics',['feature','label','n_present','prevalence','population_variance','ticked','used_in_PCA'],keys.map((f,i)=>[f,labels(f),own[i],own[i]/n,own[i]/n*(1-own[i]/n),settings.ticked_features.includes(f),settings.features_used.includes(f)]));
     matrix('cooccurrence',keys,counts);
+    const traits=keys.filter(f=>G.F[f].group==='traits'),ti=traits.map(f=>keys.indexOf(f));
+    matrix('trait_correlations',traits,ti.map(i=>ti.map(j=>{const p=own[i]/n,q=own[j]/n,den=Math.sqrt(p*(1-p)*q*(1-q));return den?(counts[i][j]/n-p*q)/den:null;})));
     const share=counts.map((r,i)=>r.map(v=>own[i]?v/own[i]:0));
     const phi=counts.map((r,i)=>r.map((v,j)=>{const p=own[i]/n,q=own[j]/n,den=Math.sqrt(p*(1-p)*q*(1-q));return den?(v/n-p*q)/den:0;}));
     const lift=counts.map((r,i)=>r.map((v,j)=>i===j?0:Math.log2((v+.5)/(own[i]*own[j]/n+.5))));

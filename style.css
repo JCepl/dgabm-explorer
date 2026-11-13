@@ -178,6 +178,10 @@ body[data-exporting="true"] nav > a { pointer-events:none; }
 /* The loadings view now has one chart. */
 .fit-grid.on { grid-template-columns:minmax(0,1fr); }
 
+/* Keep readable square matrix cells; the surrounding pane scrolls on small screens. */
+.matrix-scroll { flex:1; min-height:0; overflow:auto; background:#fff; border:1px solid var(--line); border-radius:10px; }
+.matrix-plot { flex:none; max-width:none; }
+
 body.locked > nav, body.locked > main, body.locked > footer { display:none; }
 .unlock-card { width:min(360px, calc(100vw - 64px)); padding:30px; background:#fff; color:#263238; border-radius:12px; box-shadow:0 3px 20px #12304a18; }
 .unlock-card h1 { font-size:21px; margin-top:0; color:#12304a; }

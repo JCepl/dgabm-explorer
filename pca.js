@@ -23,9 +23,9 @@
   // ---------------------------------------------------------------- notes
   function notes(R, lab) {
     const st = G.st, p = R.P, silK = R.sil[R.ks.indexOf(st.k)], best = Math.max(...R.sil), edge = R.bestK === G.KR[0] || R.bestK === G.KR[1];
-    $('scopenote').textContent = { inputs: 'Inputs only: how the models are built (interaction, traits, genetics, management, QTL / alleles / heritability / generations). The 16 output indicators are left out.', all: 'Inputs + outputs: how the models are built and what they report.', outputs: 'Outputs only: what the models report (16 output indicators and the number of outputs).' }[st.scope];
+    $('scopenote').textContent = 'All model descriptors and output indicators are available together. Select individual variables below.';
     $('quickstats').innerHTML = `<b>${G.n} papers</b><span>${R.feats.length} features</span><span>PC1–${p.nPc}: ${p.cumulative[p.nPc - 1].toFixed(1)}%</span><span>k = ${st.k}</span><span>Silhouette ${silK.toFixed(3)}</span>${best < 0.25 ? '<span class="warn">Weak cluster structure</span>' : ''}${edge ? `<span class="warn">Silhouette peak at k=${R.bestK} (range edge)</span>` : ''}`;
-    $('quickstats').insertAdjacentHTML('beforeend', `<span>Management off</span>${G.isRecommended() ? '<b>Reviewed view</b>' : ''}`);
+    $('quickstats').insertAdjacentHTML('beforeend', `<span>Management off</span>${G.isRecommended() ? '<b>Overall view</b>' : ''}`);
     $('map-variance').textContent = `This 2D map shows ${(p.explained[0] + p.explained[1]).toFixed(1)}% of variance.`;
     const mods = [...lab].map((l, i) => G.D.articles[i].model ? l : 0).filter(Boolean), dist = {}; mods.forEach(l => dist[l] = (dist[l] || 0) + 1);
     $('note').innerHTML = `<b>${R.feats.length} features</b>${R.feats.some(f => G.ew(f) !== 1) ? ' (weights applied)' : ''} standardized, PC1-PC${p.nPc} retained (${p.cumulative[p.nPc - 1].toFixed(1)}% of the variance), Ward.D2 on Euclidean distances between those PCs. Average silhouette at k = ${st.k}: <b>${silK.toFixed(3)}</b>; over k = ${G.KR[0]}-${G.KR[1]} the maximum is at k = ${R.bestK} (${best.toFixed(3)}). ` +
@@ -60,7 +60,7 @@
       const ids = [...lab].map((l, i) => l === c ? i : -1).filter(i => i >= 0); if (!ids.length) continue;
       if (!three && ids.length >= 4) { const e = ellipse(ids.map(i => [p.scores[i][0], p.scores[i][1]]), 0.68); tr.push({ x: e.map(v => v[0]), y: e.map(v => v[1]), type: 'scatter', mode: 'lines', fill: 'toself', fillcolor: ci(c) + '12', line: { width: 0 }, hoverinfo: 'skip', showlegend: false }); }
       const mk = i => st.mark && G.D.articles[i].model;
-      const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c + (G.isRecommended() ? ' · ' + G.preset.labels[c - 1] : ''), type: three ? 'scatter3d' : 'scatter', mode: 'markers',
+      const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c + (G.isRecommended() && G.preset.labels[c - 1] ? ' · ' + G.preset.labels[c - 1] : ''), type: three ? 'scatter3d' : 'scatter', mode: 'markers',
         textfont: { size: three ? 9 : 8, color: '#fff' }, marker: { color: ci(c), size: ids.map(i => mk(i) ? (three ? 10 : 12) : (three ? 7 : 8)), line: { color: ids.map(i => mk(i) ? '#FFD166' : '#fff'), width: ids.map(i => mk(i) ? 2 : .6) } } };
       if (three) { t.z = ids.map(i => p.scores[i][2]); t.marker.line = { color: '#fff', width: 1 }; }
       tr.push(t);
@@ -130,21 +130,12 @@
     Plotly.react('loadplot', [{ type: 'bar', orientation: 'h', x: L.map(l => l.v), y: L.map(l => G.F[l.f].label), marker: { color: L.map(l => l.v >= 0 ? '#0072B2' : '#D55E00') }, hovertemplate: '%{y}: %{x:.3f}<extra></extra>' }],
       { margin: { l: 180, r: 10, t: 30, b: 36 }, title: { text: `PC${pc + 1} explains ${p.explained[pc].toFixed(1)}% of the standardized variation`, font: { size: 11 }, x: 0.02, y: 0.99, yanchor: 'top' }, xaxis: { title: 'loading', zeroline: true }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { color: G.font() } }, { displaylogo: false, responsive: true, displayModeBar: false });
   }
-  function drawSil(R) {
-    const st = G.st;
-    Plotly.react('sil', [{ x: R.ks, y: R.sil, type: 'scatter', mode: 'lines+markers', marker: { color: R.ks.map(k => k === st.k ? '#E31A1C' : '#0072B2'), size: R.ks.map(k => k === st.k ? 13 : 7) }, hovertemplate: 'k=%{x}: %{y:.3f}<extra></extra>' }],
-      { margin: { l: 50, r: 10, t: 10, b: 40 }, xaxis: { title: 'number of clusters k', dtick: 1 }, yaxis: { title: 'average silhouette' }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { color: G.font() },
-        shapes: [{ type: 'line', x0: G.KR[0], x1: G.KR[1], y0: .25, y1: .25, line: { dash: 'dot', color: '#999' } }], annotations: [{ x: G.KR[1], y: .25, text: '0.25 = weak-structure line', showarrow: false, yshift: 10, xanchor: 'right', font: { size: 10, color: '#888' } }] },
-      { displaylogo: false, responsive: true, displayModeBar: false });
-    const el = $('sil'); if (el.removeAllListeners) el.removeAllListeners('plotly_click');
-    el.on('plotly_click', e => { st.auto = false; st.k = e.points[0].x; G.emit('state'); });
-  }
   function tables(R, lab) {
     const st = G.st, n = G.n, k = st.k, sil = G.C.silhouette(lab, R.D, n).perArticle, bin = R.feats.filter(f => G.F[f].binary), rows = [];
     for (let c = 1; c <= k; c++) {
       const ids = [...lab].map((l, i) => l === c ? i : -1).filter(i => i >= 0), rest = [...lab].map((l, i) => l !== c ? i : -1).filter(i => i >= 0);
       const top = bin.map(f => ({ f, v: G.prevIn(f, ids) })).sort((a, b) => b.v - a.v).slice(0, 3), con = contrast(R, ids, rest, 2), mod = ids.filter(i => G.D.articles[i].model).length;
-      rows.push(`<tr><td><span class="sw" style="background:${ci(c)}"></span>C${c}${G.isRecommended() ? ' · ' + G.esc(G.preset.labels[c - 1]) : ''}</td><td>${ids.length}</td><td>${Math.round(100 * ids.length / n)}%</td><td>${G.mean(ids.map(i => sil[i])).toFixed(3)}</td><td>${mod}</td><td>${top.map(x => `${G.esc(G.F[x.f].label)} ${Math.round(100 * x.v)}%`).join(', ')}</td><td>${fmtC(con)}</td></tr>`);
+      rows.push(`<tr><td><span class="sw" style="background:${ci(c)}"></span>C${c}${G.isRecommended() && G.preset.labels[c - 1] ? ' · ' + G.esc(G.preset.labels[c - 1]) : ''}</td><td>${ids.length}</td><td>${Math.round(100 * ids.length / n)}%</td><td>${G.mean(ids.map(i => sil[i])).toFixed(3)}</td><td>${mod}</td><td>${top.map(x => `${G.esc(G.F[x.f].label)} ${Math.round(100 * x.v)}%`).join(', ')}</td><td>${fmtC(con)}</td></tr>`);
     }
     $('ctab').innerHTML = `<table class="t"><tr><th>Cluster</th><th>Papers</th><th>Share</th><th>Silhouette</th><th>Model papers</th><th>Most frequent features</th><th>Strongest contrast vs rest</th></tr>${rows.join('')}</table>`;
     const srows = []; for (let kk = G.KR[0]; kk <= G.KR[1]; kk++) { const lb = G.C.cutree(R.merges, n, kk), s = splitInfo(R, lb, kk); srows.push(`<tr><td>${kk}</td><td>${s.par}</td><td>${s.ca} (${s.a.length}) / ${s.cb} (${s.b.length})</td><td>${s.q.height.toFixed(2)}</td><td>${fmtC(s.top)}</td></tr>`); }
@@ -179,7 +170,7 @@
     if (!cur) {
       $('quickstats').textContent = 'Choose at least 3 non-constant features with positive weights.';
       $('note').textContent = $('quickstats').textContent;
-      ['pca', 'loadplot', 'sil'].forEach(id => { G.cancelPlot(id); Plotly.purge(id); $(id).replaceChildren(); });
+      ['pca', 'loadplot'].forEach(id => { G.cancelPlot(id); Plotly.purge(id); $(id).replaceChildren(); });
       G.cancelPlot('dend'); $('dend').replaceChildren(); $('fork').textContent = ''; $('ctab').textContent = ''; $('stab').textContent = '';
       return;
     }
@@ -189,7 +180,6 @@
     $('pcsel').dataset.v = Math.min(+$('pcsel').dataset.v || 0, R.P.nPc - 1);
     $('pcsel').innerHTML = Array.from({ length: R.P.nPc }, (_, i) => `<option value="${i}"${i === (+$('pcsel').dataset.v || 0) ? ' selected' : ''}>PC ${i + 1}</option>`).join('');
     G.lazyPlot('loadplot', () => drawLoadings(R));
-    G.lazyPlot('sil', () => drawSil(R));
     if (st.sel != null) select(st.sel);
     G.ext.render();
   };
@@ -202,7 +192,7 @@
   P.setup = function () {
     const st = G.st; G.on('extra', () => { if (st.sel != null) select(st.sel); });
     $('k').innerHTML = Array.from({ length: 11 }, (_, i) => `<option>${i + 2}</option>`).join('');
-    $('scope').querySelectorAll('button').forEach(b => b.onclick = () => { st.scope = b.dataset.s; $('scope').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); G.emit('scope'); G.emit('state'); });
+
     $('auto').onchange = e => { st.auto = e.target.checked; G.emit('state'); };
     $('k').onchange = e => { st.auto = false; st.k = +e.target.value; G.emit('state'); };
     $('mark').onchange = e => { st.mark = e.target.checked; G.emit('view'); };
@@ -212,8 +202,8 @@
     $('wmode').onchange = e => { st.wmode = e.target.checked; };
     $('pcsel').onchange = e => { $('pcsel').dataset.v = e.target.value; const c = G.cur(); if (c) drawLoadings(c.R); };
     $('rw').onclick = e => { e.preventDefault(); G.D.columns.forEach(c => st.w[c] = 1); G.emit('state'); };
-    $('r20').onclick = e => { e.preventDefault(); st.ticks = new Set(G.D.default20.filter(f => !G.excluded.has(f))); st.scope = 'all'; $('scope').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.s === 'all')); G.emit('scope'); G.emit('state'); };
-    $('recommended').onclick = e => { e.preventDefault(); st.ticks = new Set(G.recommendedFeatures); st.scope = G.preset.scope; st.k = G.preset.k; st.auto = false; G.D.columns.forEach(f => st.w[f] = 1); G.D.group_order.forEach(g => st.cw[g] = 1); $('scope').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.s === st.scope)); G.emit('scope'); G.ext.weightsPanel(); G.emit('state'); };
+    $('r20').onclick = e => { e.preventDefault(); st.ticks = new Set(G.D.default20.filter(f => !G.excluded.has(f))); st.scope = 'all'; G.emit('scope'); G.emit('state'); };
+    $('recommended').onclick = e => { e.preventDefault(); st.ticks = new Set(G.recommendedFeatures); st.scope = G.preset.scope; st.k = G.preset.k; st.auto = false; G.D.columns.forEach(f => st.w[f] = 1); G.D.group_order.forEach(g => st.cw[g] = 1); G.emit('scope'); G.ext.weightsPanel(); G.emit('state'); };
     $('rst').onclick = e => { e.preventDefault(); st.ticks = new Set(G.D.startup); G.emit('state'); };
     window.addEventListener('resize', () => { const c = G.cur(); if (c && $('tab-pca').classList.contains('on')) drawDend(c.R, c.lab); });
   };

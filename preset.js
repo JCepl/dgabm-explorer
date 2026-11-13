@@ -1,10 +1,11 @@
-// Reviewed exploratory default. Management remains descriptive metadata only.
+// Combined exploratory starting view. All weights remain one.
 window.DGABM_PRESET = {
-  name: 'Reviewed broad view',
+  name: 'Overall view',
   featureSet: 'default20',
+  includeOutputs: true,
   excludedFeatures: ['management_included'],
-  scope: 'inputs',
+  scope: 'all',
   k: 3,
-  labels: ['QG-coded', 'Infinitesimal-coded', 'PG-enriched / mixed'],
-  rationale: 'The original binary model descriptors, with management excluded, unit weights, and three broad exploratory groups. Outputs and imputed continuous fields remain sensitivity views. These groups primarily reflect the inheritance coding; they are not independently established natural classes.'
+  labels: [],
+  rationale: 'Model descriptors and output indicators are considered together, with management excluded and unit weights. The three groups are exploratory; they are not independently established natural classes. Continuous fields remain available for sensitivity checks.'
 };

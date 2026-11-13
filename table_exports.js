@@ -3,14 +3,14 @@
   const T = G.tableExports = {};
   T.names = {
     all:'All tables', cluster_summary:'Cluster summary', splits:'Hierarchy splits', cluster_profiles:'Cluster feature profiles', screening:'Feature screening',
-    scores:'PCA scores and memberships', loadings:'PCA loadings', variance:'Explained variance', silhouette:'Silhouette by k',
+    scores:'PCA scores and memberships', loadings:'PCA loadings', variance:'Explained variance',
     feature_matrix:'Binary feature matrix', feature_statistics:'Feature frequencies and variance',
     cooccurrence:'Co-occurrence counts', clustered_cooccurrence:'Clustered co-occurrence counts',
     row_share:'Co-occurrence row shares', phi:'Feature phi correlations', lift:'Feature log2 lift',
     cross_counts:'Selected feature cross-table', cross_statistics:'Cross-table statistics', cross_articles:'Articles with both features',
     citation_edges:'Visible citation edges', citation_all_edges:'All citation edges', citation_nodes:'Citation node statistics',
     citation_counts:'Cluster citation counts', citation_share:'Cluster citation row shares',
-    workbook_filtered:'Workbook search results', workbook:'Complete workbook table', dictionary:'Data dictionary', summary_records:'Summary-map records'
+    workbook_filtered:'Workbook search results', workbook:'Complete workbook table', dictionary:'Data dictionary'
   };
   T.controls = () => {
     const value = id => G.$(id)?.value || '', radio = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
@@ -61,7 +61,6 @@
     const rawrows=D.raw.map((row,i)=>[D.articles[i].id,...row]);add('workbook',rawcols,rawrows);
     const q=controls.search.toLowerCase();add('workbook_filtered',rawcols,rawrows.filter(row=>row.slice(1).some(v=>String(v??'').toLowerCase().includes(q))));
     add('dictionary',['column','name','full','roles','feeds'],D.dict.map(d=>[d.col,d.name,d.full,JSON.stringify(d.roles),JSON.stringify(d.feeds)]));
-    const sk=Object.keys(D.summary[0]||{});add('summary_records',sk,D.summary.map(r=>sk.map(k=>r[k])));
     const suggest=G.ext.suggest(controls.prevalence_min,controls.correlation_max,controls.communality_min),scols=['feature','label','category','type','prevalence','maxr','similar','comm','decision','reason'];
     add('screening',[...scols,'ticked'],suggest.map(r=>[...scols.map(k=>r[k]),settings.ticked_features.includes(r.feature)]));
     if(current){
@@ -69,7 +68,6 @@
       add('scores',['article_id','cluster',...pc],P.scores.map((row,i)=>[D.articles[i].id,lab[i],...row]));
       add('loadings',['feature',...pc],R.feats.map((f,i)=>[f,...P.loadings.map(row=>row[i])]));
       add('variance',['component','explained_percent','cumulative_percent','retained'],P.explained.map((v,i)=>[i+1,v,P.cumulative[i],i<P.nPc]));
-      add('silhouette',['k','mean_silhouette'],R.ks.map((v,i)=>[v,R.sil[i]]));
       const bin=R.feats.filter(f=>G.F[f].binary),prev=(f,ids)=>ids.reduce((s,i)=>s+D.X[i][G.col.get(f)],0)/ids.length;
       const contrast=(ids,rest)=>bin.map(f=>({f,d:100*(prev(f,ids)-prev(f,rest))})).sort((a,b)=>Math.abs(b.d)-Math.abs(a.d));
       const fmt=arr=>arr.map(v=>labels(v.f)+' '+(v.d>=0?'+':'')+Math.round(v.d)+' pp').join(', ');

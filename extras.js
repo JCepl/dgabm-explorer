@@ -55,25 +55,6 @@
   }
   X.weightsPanel = weightsPanel;
 
-  // ------------------------------------------------------------- semi-subjective 3D summary map (all source papers)
-  const PURP = { 'Genetic architecture & selection': '#6A3D9A', 'Life history & demography': '#0072B2', 'Interactions & co-evolution': '#D55E00', 'Spatial dynamics & dispersal': '#009E73', 'Environmental change & persistence': '#E69F00', 'Management & harvest': '#CC79A7' };
-  let sumDone = false;
-  async function renderSummary() {
-    if (sumDone) return; sumDone = true;
-    await Promise.all([G.extra(), G.need3d()]);
-    const S = G.D.summary, hv = r => `<b>W${r.id} · ${G.esc(r.title)}</b><br>${G.esc(r.authors)} (${r.year ?? 'n/a'})<br><b>Field:</b> ${G.esc(r.field)}<br><b>Initial detail:</b> ${G.esc(r.detail)}<br><b>Study style:</b> ${G.esc(r.quant)}<br><b>Main purpose:</b> ${G.esc(r.purpose)}<br><b>Status:</b> ${r.retained ? 'Retained for analysis' : 'Excluded from analysis'}${r.model ? '<br><b>One of the 27 model papers</b>' : ''}`;
-    const tr = Object.keys(PURP).map(pu => { const rs = S.filter(r => r.retained && r.purpose === pu); return { type: 'scatter3d', mode: 'markers', name: pu, x: rs.map(r => r.x), y: rs.map(r => r.y), z: rs.map(r => r.z), customdata: rs.map(r => r.id), text: rs.map(hv), hoverinfo: 'text', marker: { size: 5.5, opacity: 0.78, color: PURP[pu], line: { width: 0.5, color: '#fff' } } }; });
-    const ex = S.filter(r => !r.retained); tr.push({ type: 'scatter3d', mode: 'markers', name: 'Excluded from PCA/clustering', x: ex.map(r => r.x), y: ex.map(r => r.y), z: ex.map(r => r.z), customdata: ex.map(r => r.id), text: ex.map(hv), hoverinfo: 'text', marker: { size: 6.5, opacity: 0.8, color: '#8A8A8A', line: { color: '#4F4F4F', width: 1 } } });
-    $('sum3d').innerHTML = '';
-    Plotly.react('sum3d', tr, { margin: { l: 0, r: 0, b: 90, t: 10 }, legend: { orientation: 'h', x: 0, y: -0.02 }, paper_bgcolor: '#fff',
-      scene: { aspectmode: 'cube', camera: { eye: { x: 0.78, y: 0.78, z: 0.62 } },
-        xaxis: { title: 'Field', tickmode: 'array', tickvals: [1, 2, 3, 4, 5], ticktext: ['Theory', 'Pop. genetics', 'Eco-evo', 'Conservation', 'Management'], tickfont: { size: 9 }, range: [0.65, 5.35] },
-        yaxis: { title: 'Initial detail', tickmode: 'array', tickvals: [0, 1, 2, 3, 4, 5], ticktext: ['Abstract', 'Single locus', 'QTL', 'QTL detail', 'Corr./structure', 'LD/dom./epi.'], tickfont: { size: 9 }, range: [-0.35, 5.35] },
-        zaxis: { title: 'Study style', tickmode: 'array', tickvals: [1, 2, 3, 4, 5], ticktext: ['Conceptual', 'Scenarios', 'Quant. exp.', 'Empirical', 'Calibrated'], tickfont: { size: 9 }, range: [0.65, 5.35] } } }, { displaylogo: false, responsive: true });
-    $('sum3d').on('plotly_click', e => { const r = S.find(x => x.id === e.points[0].customdata); if (!r) return;
-      $('suminfo').innerHTML = `<h4>3D-map paper inspector</h4><p style="margin:4px 0"><b>W${r.id}</b> ${G.esc(r.title)}</p><p class="help" style="margin:0">${G.esc(r.authors)} · ${r.year ?? 'n/a'} · ${r.retained ? 'retained for analysis' : 'excluded from analysis'}${r.model ? ' · one of the 27 model papers' : ''}<br>X: ${G.esc(r.field)} · Y: ${G.esc(r.detail)} · Z: ${G.esc(r.quant)} · purpose: ${G.esc(r.purpose)}</p>`; });
-  }
-
   // ------------------------------------------------------------- wiring
   X.render = function () { renderSuggest(); };
   X.setup = function () {
@@ -84,6 +65,5 @@
       GRP().forEach((g, i) => st.cw[g] = cnt[i] > 0 ? +((tot / act) / cnt[i]).toFixed(2) : 1); weightsPanel(); G.emit('state'); };
     $('wbox-reset').onclick = () => { G.D.columns.forEach(c => G.st.w[c] = 1); GRP().forEach(g => G.st.cw[g] = 1); weightsPanel(); G.emit('state'); };
     G.on('scope', weightsPanel); weightsPanel();
-    const io = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)) { io.disconnect(); renderSummary(); } }, { rootMargin: '300px' }); io.observe($('sum3d'));
   };
 })();

@@ -70,12 +70,12 @@
     G.varied = Object.fromEntries(D.columns.map((f, j) => [f, D.X.some(row => row[j] !== D.X[0][j])]));
     G.preset = window.DGABM_PRESET;
     G.excluded = new Set(G.preset?.excludedFeatures || []);
-    G.recommendedFeatures = (D[G.preset?.featureSet] || D.startup).filter(f => !G.excluded.has(f));
+    G.recommendedFeatures = [...(D[G.preset?.featureSet] || D.startup), ...(G.preset?.includeOutputs ? D.features.filter(f => f.group === 'outputs').map(f => f.key) : [])].filter(f => !G.excluded.has(f));
     G.n = D.n; G.col = new Map(D.columns.map((c, i) => [c, i])); G.F = Object.fromEntries(D.features.map(f => [f.key, f]));
     G.binKeys = D.features.filter(f => f.group !== 'continuous' && f.binary).map(f => f.key);       // the 47 candidate 0/1 features, in group order
     G.prev = Object.fromEntries(G.binKeys.map(k => [k, D.X.reduce((s, r) => s + r[G.col.get(k)], 0)]));
-    G.st = { scope: G.preset?.scope || 'inputs', ticks: new Set(G.recommendedFeatures), w: Object.fromEntries(D.columns.map(c => [c, 1])), cw: Object.fromEntries(D.group_order.map(g => [g, 1])), k: G.preset?.k || 7, auto: !G.preset, sel: null, cache: new Map(), load: true, topn: 7, mark: true, d3: false, wmode: false };
-    G.inScope = () => (G.st.scope === 'all' ? D.columns : D.scopes[G.st.scope]).filter(f => !G.excluded.has(f));
+    G.st = { scope: 'all', ticks: new Set(G.recommendedFeatures), w: Object.fromEntries(D.columns.map(c => [c, 1])), cw: Object.fromEntries(D.group_order.map(g => [g, 1])), k: G.preset?.k || 7, auto: !G.preset, sel: null, cache: new Map(), load: true, topn: 7, mark: true, d3: false, wmode: false };
+    G.inScope = () => D.columns.filter(f => !G.excluded.has(f));
     G.isRecommended = () => G.st.k === G.preset?.k && G.compute().feats.length === G.recommendedFeatures.length && G.compute().feats.every(f => G.recommendedFeatures.includes(f) && G.ew(f) === 1);
   };
 

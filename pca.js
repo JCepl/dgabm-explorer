@@ -23,9 +23,9 @@
   // ---------------------------------------------------------------- notes
   function notes(R, lab) {
     const st = G.st, p = R.P, silK = R.sil[R.ks.indexOf(st.k)], best = Math.max(...R.sil), edge = R.bestK === G.KR[0] || R.bestK === G.KR[1];
-    $('scopenote').textContent = 'All model descriptors and output indicators are available together. Select individual variables below.';
+    $('scopenote').textContent = 'All model descriptors and output indicators are available together. Select individual variables in the side panel.';
     $('quickstats').innerHTML = `<b>${G.n} papers</b><span>${R.feats.length} features</span><span>PC1–${p.nPc}: ${p.cumulative[p.nPc - 1].toFixed(1)}%</span><span>k = ${st.k}</span><span>Silhouette ${silK.toFixed(3)}</span>${best < 0.25 ? '<span class="warn">Weak cluster structure</span>' : ''}${edge ? `<span class="warn">Silhouette peak at k=${R.bestK} (range edge)</span>` : ''}`;
-    $('quickstats').insertAdjacentHTML('beforeend', `<span>Management off</span>${G.isRecommended() ? '<b>Overall view</b>' : ''}`);
+    $('quickstats').insertAdjacentHTML('beforeend', `<span>Management ${R.feats.includes('management_included')?'on':'off'}</span>${G.isRecommended() ? '<b>Overall view</b>' : ''}`);
     $('map-variance').textContent = `This 2D map shows ${(p.explained[0] + p.explained[1]).toFixed(1)}% of variance.`;
     const mods = [...lab].map((l, i) => G.D.articles[i].model ? l : 0).filter(Boolean), dist = {}; mods.forEach(l => dist[l] = (dist[l] || 0) + 1);
     $('note').innerHTML = `<b>${R.feats.length} features</b>${R.feats.some(f => G.ew(f) !== 1) ? ' (weights applied)' : ''} standardized, PC1-PC${p.nPc} retained (${p.cumulative[p.nPc - 1].toFixed(1)}% of the variance), Ward.D2 on Euclidean distances between those PCs. Average silhouette at k = ${st.k}: <b>${silK.toFixed(3)}</b>; over k = ${G.KR[0]}-${G.KR[1]} the maximum is at k = ${R.bestK} (${best.toFixed(3)}). ` +

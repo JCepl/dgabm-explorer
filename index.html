@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=a56cc2813a9e"></head><body class="locked">
+<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=1e96872d2639"></head><body class="locked">
 <nav>
-  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.5 ✓</span>
+  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.6 ✓</span>
   <a data-tab="intro" class="on">Start here</a><a data-tab="pca">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data dictionary</a>
   <span class="sp"></span><button class="btn" onclick="location.reload()">Lock</button>
   <details class="download-menu" id="download-menu"><summary>Download</summary><div class="download-panel">
@@ -30,12 +30,12 @@
     <header class="intro-heading"><p class="intro-eyebrow">DG-ABM literature explorer</p><h1>Explore the papers, models and connections.</h1><p>An interactive companion to the review of demo-genetic agent-based models. Browse the coded evidence, compare model characteristics and see how studies connect through citations and shared authors.</p></header>
     <div class="intro-facts"><span><b id="intro-retained"></b> papers in the main analysis</span><span><b id="intro-total"></b> papers in the source table</span><span><b id="intro-variables"></b> coded variables</span></div>
     <div class="intro-views">
-      <button data-open="pca"><strong>PCA and hierarchy <span>↗</span></strong><p>Compare papers by their selected characteristics. Click a point to inspect a paper; change the variables in the source-column grid below the plots.</p></button>
+      <button data-open="pca"><strong>PCA and hierarchy <span>↗</span></strong><p>Compare papers by their selected characteristics. Click a point to inspect a paper; change the variables in the source-column tables beside the plots.</p></button>
       <button data-open="fm"><strong>Feature matrix <span>↗</span></strong><p>See which features occur together and compare correlations. For Pearson r, blue means −1, white 0 and red +1. Zoom in to read cell values.</p></button>
       <button data-open="cite"><strong>Citations and authors <span>↗</span></strong><p>Follow citation arrows and shared-author connections. Switch either layer on or off, or click a paper to explore its neighbourhood.</p></button>
       <button data-open="dict"><strong>Source data and definitions <span>↗</span></strong><p>Search the original table, read column definitions and trace coded variables back to their source columns.</p></button>
     </div>
-    <div class="intro-bottom"><section><h2>How to start</h2><ol><li>Open PCA and inspect a few papers.</li><li>Scroll to Variables to include or exclude characteristics. Management starts off; every weight starts at 1.</li><li>Compare the matrix and network views, then use Download to save a figure or tables with the actual settings, data and R code.</li></ol></section><aside><h2>How to interpret it</h2><p>The clusters are exploratory. The 2D PCA map shows only part of the variation; check the explained variance and method notes before interpreting groups.</p><p>The excluded-paper switch adds reviewer-excluded records for sensitivity checks. Shared-author links match names and initials, not verified identities.</p><a href="https://docs.google.com/spreadsheets/d/1j7Kj7MRvyBxyDpo8_B2IPc6U6CHd52xa/edit?gid=335766374" target="_blank" rel="noopener">View the source Google Sheet ↗</a></aside></div>
+    <div class="intro-bottom"><section><h2>How to start</h2><ol><li>Open PCA and inspect a few papers.</li><li>Use Variables beside the plots to include or exclude characteristics. Management is included initially; every weight starts at 1.</li><li>Compare the matrix and network views, then use Download to save a figure or tables with the actual settings, data and R code.</li></ol></section><aside><h2>How to interpret it</h2><p>The clusters are exploratory. The 2D PCA map shows only part of the variation; check the explained variance and method notes before interpreting groups.</p><p>The excluded-paper switch adds reviewer-excluded records for sensitivity checks. Shared-author links match names and initials, not verified identities.</p><a href="https://docs.google.com/spreadsheets/d/1j7Kj7MRvyBxyDpo8_B2IPc6U6CHd52xa/edit?gid=335766374" target="_blank" rel="noopener">View the source Google Sheet ↗</a></aside></div>
   </div>
 </section>
 
@@ -56,6 +56,13 @@
     <div class="status-row"><span id="quickstats"></span><details class="method-notes"><summary>Method &amp; warnings</summary><div class="method-body"><div class="notes" id="scopenote"></div><div class="notes" id="note"></div></div></details></div>
   </div>
   <div class="workspace">
+      <section id="variables-section" aria-label="Variables by source column">  <div class="variable-tools">
+    <h3>Variables by source column</h3><p class="help">Each card is one column of the current Google Sheet. Check variables to include them; weights remain 1 until changed.</p><input id="variable-search" type="search" placeholder="Find a variable or source column…" aria-label="Find variables">
+    <p class="help">Click a feature to include it. <a href="#" id="recommended">Overall view</a> · <a href="#" id="r20">Binary 20</a> · <a href="#" id="rst">Legacy start</a> · <a href="#" id="rw">Reset weights</a>.</p>
+    <div class="notes" id="featnote"></div>
+    <div class="wmode" hidden><label><input type="checkbox" id="wmode"> Weight mode: click +step, shift-click −step</label> <label>step <select id="wstep"><option value="1">1</option><option value="0.5">0.5</option><option value="0.25">0.25</option><option value="0.1">0.1</option><option value="0.05">0.05</option></select></label></div>
+    <div class="variable-grid" id="chips"></div><details><summary>Review other source columns</summary><p class="help">Counts show non-empty, reported text; reporting does not establish comparable numeric units. New candidates remain off until their coding is reviewed.</p><div id="column-review"></div></details>
+</div></section>
 
     <div class="pca-stage">
       <div class="workspace-tabs" id="workspace-tabs" role="tablist" aria-label="PCA views">
@@ -63,7 +70,7 @@
         <button data-view="fit" role="tab" aria-selected="false">Loadings</button>
         <button data-view="clusters" role="tab" aria-selected="false">Clusters &amp; splits</button>
         <button data-view="weights" role="tab" aria-selected="false">Weights &amp; screening</button>
-        <button type="button" id="variables-jump" title="Scroll to the variable tables on this page">Variables ↓</button>
+        <button type="button" id="variables-jump" title="Focus the variable tables beside the plots">Variables ←</button>
       </div>
       <div id="view-map" class="workspace-view on" role="tabpanel">
         <div class="map-grid">
@@ -89,13 +96,7 @@
 
     </div>
   </div>
-      <section id="variables-section" aria-label="Variables by source column">  <div class="variable-tools">
-    <h3>Variables by source column</h3><p class="help">Each card is one column of the current Google Sheet. Check variables to include them; weights remain 1 until changed.</p><input id="variable-search" type="search" placeholder="Find a variable or source column…" aria-label="Find variables">
-    <p class="help">Click a feature to include it. <a href="#" id="recommended">Overall view</a> · <a href="#" id="r20">Binary 20</a> · <a href="#" id="rst">Legacy start</a> · <a href="#" id="rw">Reset weights</a>.</p>
-    <div class="notes" id="featnote"></div>
-    <div class="wmode" hidden><label><input type="checkbox" id="wmode"> Weight mode: click +step, shift-click −step</label> <label>step <select id="wstep"><option value="1">1</option><option value="0.5">0.5</option><option value="0.25">0.25</option><option value="0.1">0.1</option><option value="0.05">0.05</option></select></label></div>
-    <div class="variable-grid" id="chips"></div><details><summary>Review other source columns</summary><p class="help">Counts show non-empty, reported text; reporting does not establish comparable numeric units. New candidates remain off until their coding is reviewed.</p><div id="column-review"></div></details>
-</div></section>
+
 
 </section>
 
@@ -151,4 +152,4 @@
 <footer id="foot"></footer>
 
 
-<script type="module" src="unlock.js?v=a56cc2813a9e"></script></body></html>
+<script type="module" src="unlock.js?v=1e96872d2639"></script></body></html>

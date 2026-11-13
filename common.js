@@ -81,7 +81,7 @@
     G.varied = Object.fromEntries(D.columns.map((f, j) => [f, D.X.some(row => row[j] !== D.X[0][j])]));
     G.preset = window.DGABM_PRESET;
     G.excluded = new Set(G.preset?.excludedFeatures || []);
-    G.recommendedFeatures = [...(D[G.preset?.featureSet] || D.startup), ...(G.preset?.includeOutputs ? D.features.filter(f => f.group === 'outputs').map(f => f.key) : [])].filter(f => !G.excluded.has(f));
+    G.recommendedFeatures = [...(D[G.preset?.featureSet] || D.startup), ...(G.preset?.includeOutputs ? D.features.filter(f => f.group === 'outputs').map(f => f.key) : []), ...(G.preset?.includeManagement ? ['management_included'] : [])].filter(f => !G.excluded.has(f));
     // All papers are loaded; D.X, D.articles, D.edges, D.cited_by (and later D.raw, D.doi) are the ACTIVE view: the first D.n papers (the retained ones),
     // or all D.n_all when "Include the excluded papers" is on. See G.applyPapers().
     G.full = { X: D.X, articles: D.articles, edges: D.edges, cited_by: D.cited_by };

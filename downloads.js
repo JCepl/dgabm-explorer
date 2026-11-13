@@ -37,11 +37,11 @@
       await G.extra();
       const current=G.cur(),R=current?.R,lab=current?.lab,st=G.st,id=$('export-figure').value,el=$(id);
       const tableKey=id.startsWith('table:')?id.slice(6):null;
-      const settings=clone({schema_version:2,app_version:"2026.11.13.6",include_excluded:st.includeExcluded,paper_count:G.n,exported_at:new Date().toISOString(),scope:st.scope,
+      const settings=clone({schema_version:2,app_version:"2026.11.13.7",include_excluded:st.includeExcluded,paper_count:G.n,exported_at:new Date().toISOString(),scope:st.scope,
         ticked_features:G.D.columns.filter(f=>st.ticks.has(f)&&!G.excluded.has(f)),pca_available:!!current,features_used:R?.feats||[],
         excluded_features:[...G.excluded],feature_weights:st.w,category_weights:st.cw,
         effective_weights:Object.fromEntries((R?.feats||[]).map(f=>[f,G.ew(f)])),k:st.k,auto_k:st.auto,
-        variance_target:70,n_pcs:R?.P.nPc||0,renderer_version:Plotly.version,show_loadings:st.load,loading_n:st.topn,
+        variance_target:70,n_pcs:R?.P.nPc||0,renderer_version:Plotly.version,show_loadings:st.load,loading_n:st.topn,focus_loadings:st.focusLoadings,loading_bar_count:+$('loading-count').value,
         mark_model_papers:st.mark,is_3d:st.d3,show_article_numbers:$('nums')?.checked,matrix_cell_px:G.cell,figure_id:id||null,figure_name:figureNames[id]||G.tableExports.names[tableKey]||'All tables'});
       const reference=current?clone({features:R.feats,scores:R.P.scores,loadings:R.P.loadings,explained:R.P.explained,clusters:lab,merges:R.merges,merge_heights:R.merges.map(merge=>merge.height)}):{};
       const controls=G.tableExports.controls(),tableSnapshot=clone(G.tableExports.build(settings,current,controls));

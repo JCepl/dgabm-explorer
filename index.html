@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=1e96872d2639"></head><body class="locked">
+<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=421d0ba033c4"></head><body class="locked">
 <nav>
-  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.6 ✓</span>
+  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.7 ✓</span>
   <a data-tab="intro" class="on">Start here</a><a data-tab="pca">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data dictionary</a>
   <span class="sp"></span><button class="btn" onclick="location.reload()">Lock</button>
   <details class="download-menu" id="download-menu"><summary>Download</summary><div class="download-panel">
@@ -50,7 +50,7 @@
       <label><input type="checkbox" id="nums" checked> Numbers</label>
       <label title="Adds the papers the reviewers excluded (square markers). Everything is recomputed."><input type="checkbox" id="inclx"> Include <span id="inclx-n">8</span> excluded papers</label>
       <label><input type="checkbox" id="load" checked> Loadings</label>
-      <label id="topw">top <select id="topn"><option>3</option><option>5</option><option selected>7</option><option>10</option><option>15</option></select></label>
+      <label id="topw">arrows <select id="topn"><option>5</option><option>7</option><option selected>10</option><option>15</option><option>20</option><option>30</option><option value="999">All</option></select></label><label title="Fade paper markers and hide their numbers to make the loading arrows easier to read"><input type="checkbox" id="focus-loadings"> Focus arrows</label>
       <label><input type="checkbox" id="d3"> 3D</label>
     </div>
     <div class="status-row"><span id="quickstats"></span><details class="method-notes"><summary>Method &amp; warnings</summary><div class="method-body"><div class="notes" id="scopenote"></div><div class="notes" id="note"></div></div></details></div>
@@ -80,7 +80,7 @@
         <div class="card" id="info"><h4>Paper inspector</h4><p class="help">Click a paper in either plot to inspect it.</p></div>
       </div>
       <div id="view-fit" class="workspace-view fit-grid" role="tabpanel">
-        <div class="plot-card"><h4>PCA loadings</h4><label>Component <select id="pcsel"></select></label><div class="panel" id="loadplot"></div></div>
+        <div class="plot-card"><h4 class="card-title">PCA loadings <button type="button" class="expand-btn" data-expand title="Enlarge the loadings view">⤢ Enlarge</button></h4><div class="row"><label>Component <select id="pcsel"></select></label><label>Show <select id="loading-count"><option>10</option><option>20</option><option>30</option><option value="999" selected>All variables</option></select></label></div><p class="panel-help">Scroll to see every coefficient. Map arrows are scaled for visibility; these bars show the actual PCA loadings.</p><div class="loadings-scroll"><div id="loadplot" class="panel"></div></div></div>
       </div>
       <div id="view-clusters" class="workspace-view view-scroll" role="tabpanel">  <h3>Clusters at this k</h3><p class="help">Size, mean silhouette, the most prevalent coded features in each cluster, and the features whose prevalence differs most from the remaining papers (percentage points).</p><div id="ctab"></div>
   <h3>Sequence of splits</h3><p class="help">Each row is the fork that turns k-1 clusters into k, over the whole offered range.</p><div id="stab"></div>
@@ -152,4 +152,4 @@
 <footer id="foot"></footer>
 
 
-<script type="module" src="unlock.js?v=1e96872d2639"></script></body></html>
+<script type="module" src="unlock.js?v=421d0ba033c4"></script></body></html>

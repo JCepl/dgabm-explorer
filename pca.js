@@ -56,7 +56,7 @@
     if ($('pca').querySelector('.skeleton')) $('pca').innerHTML = '';
     if (window.__lastDim !== undefined && window.__lastDim !== three) Plotly.purge('pca');   // 2D <-> 3D: start from a clean plot
     window.__lastDim = three;
-    const nums = st.nums !== false, lum = hex => { const v = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; }, txtCol = c => lum(ci(c)) > 0.58 ? '#1b2630' : '#fff';
+    const focus=st.load&&st.focusLoadings&&!three,nums = st.nums !== false&&!focus, lum = hex => { const v = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; }, txtCol = c => lum(ci(c)) > 0.58 ? '#1b2630' : '#fff';
     for (let c = 1; c <= k; c++) {
       const ids = [...lab].map((l, i) => l === c ? i : -1).filter(i => i >= 0); if (!ids.length) continue;
       if (!three && ids.length >= 4) { const e = ellipse(ids.map(i => [p.scores[i][0], p.scores[i][1]]), 0.68); tr.push({ x: e.map(v => v[0]), y: e.map(v => v[1]), type: 'scatter', mode: 'lines', fill: 'toself', fillcolor: ci(c) + '12', line: { width: 0 }, hoverinfo: 'skip', showlegend: false }); }
@@ -64,6 +64,7 @@
       const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c + (G.isRecommended() && G.preset.labels[c - 1] ? ' · ' + G.preset.labels[c - 1] : ''), type: three ? 'scatter3d' : 'scatter', mode: nums ? 'markers+text' : 'markers',
         textfont: { size: three ? 9 : 9, color: txtCol(c) }, marker: { color: ci(c), symbol: ids.map(i => G.D.articles[i].retained === false ? 'square' : 'circle'), size: ids.map(i => nums ? (mk(i) ? (three ? 14 : 22) : (three ? 11 : 18)) : (mk(i) ? (three ? 10 : 12) : (three ? 7 : 8))), line: { color: ids.map(i => mk(i) ? '#FFD166' : '#fff'), width: ids.map(i => mk(i) ? 2 : .6) } } };
       if (three) { t.z = ids.map(i => p.scores[i][2]); t.marker.line = { color: '#fff', width: 1 }; }
+      if(focus)t.opacity=.22;
       tr.push(t);
       if (!three) ann.push({ x: G.mean(ids.map(i => p.scores[i][0])), y: G.mean(ids.map(i => p.scores[i][1])), text: 'C' + c, showarrow: false, font: { size: 10, color: ci(c) }, bgcolor: 'rgba(255,255,255,.65)', borderpad: 1 });
     }
@@ -76,8 +77,19 @@
         const L = R.feats.map((f, i) => ({ f, a: p.loadings[0][i], b: p.loadings[1][i] })).sort((u, v) => (v.a ** 2 + v.b ** 2) - (u.a ** 2 + u.b ** 2)).slice(0, st.topn);
         const mx = Math.max(...p.scores.map(r => Math.abs(r[0]))), my = Math.max(...p.scores.map(r => Math.abs(r[1])));
         const sc = 0.72 * Math.min(mx / Math.max(...L.map(l => Math.abs(l.a))), my / Math.max(...L.map(l => Math.abs(l.b))));
-        L.forEach(l => { ann.push({ x: l.a * sc, y: l.b * sc, ax: 0, ay: 0, axref: 'x', ayref: 'y', xref: 'x', yref: 'y', showarrow: true, arrowhead: 2, arrowsize: 1, arrowwidth: .8, arrowcolor: '#8c9aa4', text: '' });
-          ann.push({ x: l.a * sc * 1.06, y: l.b * sc * 1.06, xref: 'x', yref: 'y', showarrow: false, text: G.esc(G.F[l.f].label), font: { size: 9, color: '#687984' }, bgcolor: 'rgba(255,255,255,.55)' }); });
+        // Move nearby labels apart without moving the vector endpoints.
+        const labels=[],width=Math.max(200,$('pca').clientWidth-65),height=Math.max(200,$('pca').clientHeight-90);
+        const measure=document.createElement('canvas').getContext('2d');measure.font='bold 11px Arial';
+        L.forEach(l=>{
+          const px=(l.a*sc/(2*mx)+.5)*width,py=(.5-l.b*sc/(2*my))*height,w=measure.measureText(G.F[l.f].label).width+10;
+          let offset=0;
+          for(let attempt=0;attempt<25;attempt++){
+            const shift=attempt===0?0:Math.ceil(attempt/2)*21*(attempt%2?1:-1),box={left:px-w/2,right:px+w/2,top:py-shift-10,bottom:py-shift+10};
+            if(!labels.some(b=>box.left<b.right+4&&box.right>b.left-4&&box.top<b.bottom+3&&box.bottom>b.top-3)){offset=shift;labels.push(box);break;}
+          }
+          ann.push({x:l.a*sc,y:l.b*sc,ax:0,ay:0,axref:'x',ayref:'y',xref:'x',yref:'y',showarrow:true,arrowhead:2,arrowsize:1,arrowwidth:2,arrowcolor:'#163d59',text:''});
+          ann.push({x:l.a*sc,y:l.b*sc,xref:'x',yref:'y',ax:0,ay:-offset,showarrow:offset!==0,arrowhead:0,arrowwidth:.7,arrowcolor:'#637f90',text:'<b>'+G.esc(G.F[l.f].label)+'</b>',font:{size:11,color:'#163d59'},bgcolor:'rgba(255,255,255,.94)',bordercolor:'rgba(22,61,89,.15)',borderpad:3,hovertext:`PC1: ${l.a.toFixed(3)}<br>PC2: ${l.b.toFixed(3)}`});
+        });
       }
       layout.annotations = ann;
     }
@@ -127,9 +139,12 @@
 
   // ---------------------------------------------------------------- loadings, silhouette, tables
   function drawLoadings(R) {
-    const p = R.P, pc = +$('pcsel').value || 0, L = R.feats.map((f, i) => ({ f, v: p.loadings[pc][i] })).sort((a, b) => Math.abs(b.v) - Math.abs(a.v)).slice(0, 14).reverse();
-    Plotly.react('loadplot', [{ type: 'bar', orientation: 'h', x: L.map(l => l.v), y: L.map(l => G.F[l.f].label), marker: { color: L.map(l => l.v >= 0 ? '#0072B2' : '#D55E00') }, hovertemplate: '%{y}: %{x:.3f}<extra></extra>' }],
-      { margin: { l: 180, r: 10, t: 30, b: 36 }, title: { text: `PC${pc + 1} explains ${p.explained[pc].toFixed(1)}% of the standardized variation`, font: { size: 11 }, x: 0.02, y: 0.99, yanchor: 'top' }, xaxis: { title: 'loading', zeroline: true }, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { color: G.font() } }, { displaylogo: false, responsive: true, displayModeBar: false });
+    const p=R.P,pc=+$('pcsel').value||0,count=+$('loading-count').value||999;
+    const L=R.feats.map((f,i)=>({f,v:p.loadings[pc][i]})).sort((a,b)=>Math.abs(b.v)-Math.abs(a.v)).slice(0,count).reverse();
+    const height=Math.max(400,L.length*28+85),limit=Math.max(...L.map(l=>Math.abs(l.v)))*1.2;
+    $('loadplot').style.height=height+'px';
+    Plotly.react('loadplot',[{type:'bar',orientation:'h',x:L.map(l=>l.v),y:L.map(l=>G.F[l.f].label),text:L.map(l=>l.v.toFixed(3)),textposition:'outside',cliponaxis:false,textfont:{size:11,color:'#163d59'},marker:{color:L.map(l=>l.v>=0?'#245d82':'#b96938')},hovertemplate:'%{y}: %{x:.4f}<extra></extra>'}],
+      {height,margin:{l:225,r:55,t:45,b:45},title:{text:`PC${pc+1}: ${p.explained[pc].toFixed(1)}% of variance · ${L.length} of ${R.feats.length} variables`,font:{size:12},x:.02},xaxis:{title:'PCA loading',range:[-limit,limit],zeroline:true,zerolinewidth:1.5,zerolinecolor:'#8699a5',gridcolor:'#edf1f5'},yaxis:{tickfont:{size:11},automargin:true},paper_bgcolor:'#fff',plot_bgcolor:'#fff',font:{color:G.font()}},{displaylogo:false,responsive:true,displayModeBar:false});
   }
   function tables(R, lab) {
     const st = G.st, n = G.n, k = st.k, sil = G.C.silhouette(lab, R.D, n).perArticle, bin = R.feats.filter(f => G.F[f].binary), rows = [];
@@ -160,8 +175,8 @@
     const { R, lab } = cur;
     $('k').value = st.k; $('auto').checked = st.auto; $('k').disabled = st.auto && false;
     notes(R, lab); G.lazyPlot('pca', () => drawMap(R, lab)); G.lazyPlot('dend', () => drawDend(R, lab)); forkBox(R, lab); tables(R, lab);
-    $('pcsel').dataset.v = Math.min(+$('pcsel').dataset.v || 0, R.P.nPc - 1);
-    $('pcsel').innerHTML = Array.from({ length: R.P.nPc }, (_, i) => `<option value="${i}"${i === (+$('pcsel').dataset.v || 0) ? ' selected' : ''}>PC ${i + 1}</option>`).join('');
+    $('pcsel').dataset.v = Math.min(+$('pcsel').dataset.v || 0, R.P.loadings.length - 1);
+    $('pcsel').innerHTML = Array.from({ length: R.P.loadings.length }, (_, i) => `<option value="${i}"${i === (+$('pcsel').dataset.v || 0) ? ' selected' : ''}>PC ${i + 1} (${R.P.explained[i].toFixed(1)}%)</option>`).join('');
     G.lazyPlot('loadplot', () => drawLoadings(R));
     if (st.sel != null) select(st.sel);
     G.ext.render();
@@ -180,6 +195,8 @@
     $('k').onchange = e => { st.auto = false; st.k = +e.target.value; G.emit('state'); };
     $('mark').onchange = e => { st.mark = e.target.checked; G.emit('view'); };
     $('load').onchange = e => { st.load = e.target.checked; G.emit('view'); };
+    $('focus-loadings').onchange=e=>{st.focusLoadings=e.target.checked;G.emit('view');};
+    $('loading-count').onchange=()=>{const cur=G.cur();if(cur)drawLoadings(cur.R);};
     $('topn').onchange = e => { st.topn = +e.target.value; G.emit('view'); };
     $('d3').onchange = e => { st.d3 = e.target.checked; G.emit('view'); };
     $('wmode').onchange = e => { st.wmode = e.target.checked; };

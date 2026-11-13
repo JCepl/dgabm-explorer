@@ -88,7 +88,7 @@
     G.n = D.n; G.col = new Map(D.columns.map((c, i) => [c, i])); G.F = Object.fromEntries(D.features.map(f => [f.key, f]));
     G.binKeys = D.features.filter(f => f.group !== 'continuous' && f.binary).map(f => f.key);       // all 0/1 features (candidates + optional groups), in group order
     G.prev = Object.fromEntries(G.binKeys.map(k => [k, D.X.reduce((s, r) => s + r[G.col.get(k)], 0)]));
-    G.st = { scope: 'all', ticks: new Set(G.recommendedFeatures), w: Object.fromEntries(D.columns.map(c => [c, 1])), cw: Object.fromEntries(D.group_order.map(g => [g, 1])), k: G.preset?.k || 7, auto: !G.preset, sel: null, cache: new Map(), load: true, topn: 7, mark: true, d3: false, wmode: false };
+    G.st = { scope: 'all', ticks: new Set(G.recommendedFeatures), w: Object.fromEntries(D.columns.map(c => [c, 1])), cw: Object.fromEntries(D.group_order.map(g => [g, 1])), k: G.preset?.k || 7, auto: !G.preset, sel: null, cache: new Map(), load: true, topn: 10, focusLoadings: false, mark: true, d3: false, wmode: false };
     G.st.includeExcluded = false;
     G.applyPapers(false);   // the page starts on the retained papers only: slice the full arrays down
     G.inScope = () => D.columns.filter(f => !G.excluded.has(f));

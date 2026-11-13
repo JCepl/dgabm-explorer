@@ -258,6 +258,11 @@ table.mat thead th { min-width:150px; }
 #variables-section .notes { font-size:10px; margin-bottom:8px; }
 @media(max-width:760px){#tab-pca.on{display:block;overflow:auto}#tab-pca .workspace{display:flex;flex-direction:column}#variables-section{max-height:40vh;flex-shrink:0}.pca-stage{min-height:520px}}
 
+.loadings-scroll { flex:1; min-height:0; overflow:auto; margin-top:5px; }
+.loadings-scroll #loadplot { min-height:400px; width:100%; }
+#view-fit .row { padding:0 6px; gap:12px; font-size:12px; }
+#view-fit .panel-help { margin:5px 6px; }
+
 body.locked > nav, body.locked > main, body.locked > footer { display:none; }
 .unlock-card { width:min(360px, calc(100vw - 64px)); padding:30px; background:#fff; color:#263238; border-radius:12px; box-shadow:0 3px 20px #12304a18; }
 .unlock-card h1 { font-size:21px; margin-top:0; color:#12304a; }

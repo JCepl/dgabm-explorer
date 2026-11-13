@@ -56,12 +56,13 @@
     if ($('pca').querySelector('.skeleton')) $('pca').innerHTML = '';
     if (window.__lastDim !== undefined && window.__lastDim !== three) Plotly.purge('pca');   // 2D <-> 3D: start from a clean plot
     window.__lastDim = three;
+    const nums = st.nums !== false, lum = hex => { const v = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; }, txtCol = c => lum(ci(c)) > 0.58 ? '#1b2630' : '#fff';
     for (let c = 1; c <= k; c++) {
       const ids = [...lab].map((l, i) => l === c ? i : -1).filter(i => i >= 0); if (!ids.length) continue;
       if (!three && ids.length >= 4) { const e = ellipse(ids.map(i => [p.scores[i][0], p.scores[i][1]]), 0.68); tr.push({ x: e.map(v => v[0]), y: e.map(v => v[1]), type: 'scatter', mode: 'lines', fill: 'toself', fillcolor: ci(c) + '12', line: { width: 0 }, hoverinfo: 'skip', showlegend: false }); }
       const mk = i => st.mark && G.D.articles[i].model;
-      const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c + (G.isRecommended() && G.preset.labels[c - 1] ? ' · ' + G.preset.labels[c - 1] : ''), type: three ? 'scatter3d' : 'scatter', mode: 'markers',
-        textfont: { size: three ? 9 : 8, color: '#fff' }, marker: { color: ci(c), size: ids.map(i => mk(i) ? (three ? 10 : 12) : (three ? 7 : 8)), line: { color: ids.map(i => mk(i) ? '#FFD166' : '#fff'), width: ids.map(i => mk(i) ? 2 : .6) } } };
+      const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c + (G.isRecommended() && G.preset.labels[c - 1] ? ' · ' + G.preset.labels[c - 1] : ''), type: three ? 'scatter3d' : 'scatter', mode: nums ? 'markers+text' : 'markers',
+        textfont: { size: three ? 9 : 9, color: txtCol(c) }, marker: { color: ci(c), size: ids.map(i => nums ? (mk(i) ? (three ? 14 : 22) : (three ? 11 : 18)) : (mk(i) ? (three ? 10 : 12) : (three ? 7 : 8))), line: { color: ids.map(i => mk(i) ? '#FFD166' : '#fff'), width: ids.map(i => mk(i) ? 2 : .6) } } };
       if (three) { t.z = ids.map(i => p.scores[i][2]); t.marker.line = { color: '#fff', width: 1 }; }
       tr.push(t);
       if (!three) ann.push({ x: G.mean(ids.map(i => p.scores[i][0])), y: G.mean(ids.map(i => p.scores[i][1])), text: 'C' + c, showarrow: false, font: { size: 10, color: ci(c) }, bgcolor: 'rgba(255,255,255,.65)', borderpad: 1 });
@@ -154,9 +155,9 @@
         const c = document.createElement('button'), on = st.ticks.has(m.key), add = st.w[m.key] - 1;
         c.type = 'button'; c.setAttribute('aria-pressed', String(on));
         c.className = 'chip' + (on ? ' on' : ''); c.textContent = m.label;
-        if (on && add > 0) { const s = document.createElement('sup'); s.textContent = '+' + +add.toFixed(2); c.appendChild(s); }
+        if (on && Math.abs(add) > 1e-9) { const s = document.createElement('sup'); s.textContent = (add > 0 ? '+' : '−') + Math.abs(+add.toFixed(2)); c.appendChild(s); }
         c.title = (m.binary ? '0/1 feature, n = ' + (G.prev[m.key] ?? '') : 'number') + ' - click to ' + (on ? 'remove' : 'add');
-        c.onclick = e => { if (st.wmode && on) { st.w[m.key] = Math.max(1, st.w[m.key] + (e.shiftKey ? -1 : 1)); G.emit('state'); } else G.toggle(m.key); };
+        c.onclick = e => { if (st.wmode && on) { const step = st.wstep || 1; st.w[m.key] = Math.max(0.05, +(st.w[m.key] + (e.shiftKey ? -step : step)).toFixed(3)); G.emit('state'); } else G.toggle(m.key); };
         div.appendChild(c);
       });
       box.appendChild(div);
@@ -200,6 +201,8 @@
     $('topn').onchange = e => { st.topn = +e.target.value; G.emit('view'); };
     $('d3').onchange = e => { st.d3 = e.target.checked; G.emit('view'); };
     $('wmode').onchange = e => { st.wmode = e.target.checked; };
+    $('wstep').onchange = e => { st.wstep = +e.target.value; };
+    $('nums').onchange = e => { st.nums = e.target.checked; G.emit('state'); };
     $('pcsel').onchange = e => { $('pcsel').dataset.v = e.target.value; const c = G.cur(); if (c) drawLoadings(c.R); };
     $('rw').onclick = e => { e.preventDefault(); G.D.columns.forEach(c => st.w[c] = 1); G.emit('state'); };
     $('r20').onclick = e => { e.preventDefault(); st.ticks = new Set(G.D.default20.filter(f => !G.excluded.has(f))); st.scope = 'all'; G.emit('scope'); G.emit('state'); };

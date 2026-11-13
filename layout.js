@@ -25,4 +25,11 @@
   });
   document.getElementById('crossbox').addEventListener('toggle', resizeVisiblePlots);
   document.getElementById('feature-toggle').onclick = () => document.querySelector('.workspace').classList.toggle('features-open');
+  // enlarge a plot card to a full window (Esc or the button closes it)
+  function toggleExpand(button) {
+    const card = button.closest('.plot-card'), on = card.classList.toggle('expanded');
+    button.textContent = on ? '✕ Close' : '⤢ Enlarge'; resizeVisiblePlots(); setTimeout(resizeVisiblePlots, 250);
+  }
+  document.querySelectorAll('[data-expand]').forEach(b => b.onclick = () => toggleExpand(b));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { const c = document.querySelector('.plot-card.expanded'); if (c) toggleExpand(c.querySelector('[data-expand]')); } });
 })();

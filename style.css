@@ -166,6 +166,15 @@ footer { flex:0 0 22px; padding:3px 12px; font-size:10px; white-space:nowrap; ov
 .feature-panel .help a { display:inline-block; white-space:nowrap; }
 .chip[aria-disabled="true"] { cursor:not-allowed; opacity:.5; }
 
+.download-menu { position:relative; align-self:center; flex:0 0 auto; margin-left:10px; color:#fff; font-size:12px; }
+.download-menu > summary { padding:5px 9px; border:1px solid #6c8296; border-radius:6px; }
+.download-panel { position:absolute; right:0; top:calc(100% + 10px); width:min(330px,90vw); background:#fff; color:var(--ink); padding:14px; border:1px solid var(--line); border-radius:9px; box-shadow:0 8px 30px #12304a33; z-index:45; }
+.download-panel select, .download-panel button { display:block; width:100%; margin:7px 0; font-size:12px; text-align:left; }
+.download-panel label, #download-status { font-size:11px; }
+#download-status { margin:9px 0 0; color:var(--mut); }
+.download-panel button:disabled { opacity:.5; cursor:wait; }
+body[data-exporting="true"] nav > a { pointer-events:none; }
+
 body.locked > nav, body.locked > main, body.locked > footer { display:none; }
 .unlock-card { width:min(360px, calc(100vw - 64px)); padding:30px; background:#fff; color:#263238; border-radius:12px; box-shadow:0 3px 20px #12304a18; }
 .unlock-card h1 { font-size:21px; margin-top:0; color:#12304a; }

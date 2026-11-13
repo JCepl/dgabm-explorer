@@ -22,7 +22,7 @@ GitHub Pages serves the root of the main branch. No R application server,
 Cloudflare tunnel, or continuously running personal computer is required.
 Updating the data requires rebuilding and encrypting the export locally, then
 pushing only the resulting static files. Never add `data.json`, `extra.json`,
-workbooks, password files, or the R/Shiny bundle to this repository.
+workbooks, password files, or plaintext R/Shiny ZIPs to this repository.
 
 To preview locally, run `python3 -m http.server 8079 --bind 127.0.0.1` and open
 http://127.0.0.1:8079/. HTTPS (or localhost) is required for Web Crypto.
@@ -30,3 +30,10 @@ Plotly's license is included in its bundled JavaScript headers.
 
 The layout uses a viewport-sized workspace with separate views for plots and
 detailed tables. Release-specific asset URLs keep cached scripts and data aligned.
+
+After unlocking, Download offers either the current figure with data and a checked
+R reproduction script, or the full Shiny application with the current settings.
+It preserves variable switches, scope, individual/category weights, exclusions,
+resolved cluster count and display choices. Default weights remain 1. Shiny
+source is served only as a separate encrypted asset, loaded on demand. ZIPs
+containing data are generated locally in the authorized visitor's browser.

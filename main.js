@@ -1,7 +1,7 @@
 (async function () {
   await G.init();
   const mods = { pca: G.pca, fm: G.fm, cite: G.cite, dict: G.dict };
-  Object.values(mods).forEach(m => m.setup()); G.ext.setup();
+  Object.values(mods).forEach(m => m.setup()); G.ext.setup(); G.exports.setup();
   const dirty = new Set(Object.keys(mods)); let cur = 'pca';
   function show(t) {
     cur = t; document.querySelectorAll('nav a[data-tab]').forEach(a => a.classList.toggle('on', a.dataset.tab === t));

@@ -1,4 +1,4 @@
-import { decryptJson } from './crypto.mjs?v=28b17a534ce7';
+import { decryptJson } from './crypto.mjs?v=edb22a994965';
 
 const form = document.getElementById('unlock-form');
 const password = document.getElementById('unlock-password');
@@ -9,7 +9,7 @@ let packet;
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = src + '?v=28b17a534ce7';
+    script.src = src + '?v=edb22a994965';
     script.async = false;
     script.onload = resolve;
     script.onerror = () => reject(new Error('A file could not load. Please reload and try again.'));
@@ -27,7 +27,7 @@ form.addEventListener('submit', async event => {
   try {
     if (!crypto.subtle) throw new Error('Use a modern browser over HTTPS to unlock this app.');
     if (!packet) {
-      const response = await fetch('dataset.enc.json?v=28b17a534ce7');
+      const response = await fetch('dataset.enc.json?v=edb22a994965');
       if (!response.ok) throw new Error('The encrypted dataset could not load. Please try again.');
       packet = await response.json();
     }
@@ -43,14 +43,21 @@ form.addEventListener('submit', async event => {
   // Decrypted records and the password are never written to browser storage.
   password.value = '';
   window.DGABM_DATA = unlocked;
+  let sourceAssets;
+  window.DGABM_GET_ASSETS = () => sourceAssets || (sourceAssets = fetch(unlocked.core.downloads.asset).then(response => {
+    if (!response.ok) throw new Error('Shiny source could not load. Try again.');
+    return response.json();
+  }).then(packet => decryptJson(packet, unlocked.core.downloads.key)).catch(error => {sourceAssets = null; throw error;}));
   document.body.classList.remove('locked');
   document.getElementById('boot').innerHTML = '<div class="spin"></div>Opening the explorer…';
   try {
     await Promise.all(['vendor/plotly-cartesian.min.js', 'core.js', 'preset.js', 'common.js', 'pca.js',
-      'extras.js', 'fm.js', 'cite.js', 'dict.js', 'layout.js', 'main.js'].map(loadScript));
+      'extras.js', 'fm.js', 'cite.js', 'dict.js', 'zip.js', 'downloads.js', 'layout.js', 'main.js'].map(loadScript));
     await window.G.latestUpdate;
     document.documentElement.dataset.unlockMs = (performance.now() - unlockStart).toFixed(1);
   } catch (error) {
-    document.getElementById('boot').textContent = error.message;
+    const boot = document.getElementById('boot');
+    boot.textContent = error.message;
+    const reload = document.createElement('button');reload.className = 'btn';reload.textContent = 'Reload';reload.onclick = () => location.reload();boot.appendChild(reload);
   }
 });

@@ -1,10 +1,17 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=28b17a534ce7"></head><body class="locked">
+<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=edb22a994965"></head><body class="locked">
 <nav>
   <span class="brand">DG-ABM article explorer</span>
   <a data-tab="pca" class="on">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data dictionary</a>
-  <span class="sp"></span><button class="btn" onclick="location.reload()">Lock</button><span class="tools"><a id="dl-raw" title="the 44 workbook columns for all articles">Download table (CSV)</a></span>
+  <span class="sp"></span><button class="btn" onclick="location.reload()">Lock</button>
+  <details class="download-menu" id="download-menu"><summary>Download</summary><div class="download-panel">
+    <label for="export-figure">Figure to reproduce</label><select id="export-figure"></select>
+    <button id="download-snapshot" class="btn">Current figure + R + data</button>
+    <button id="download-shiny" class="btn">Full Shiny app + current settings</button>
+    <button id="dl-raw" class="btn">Workbook table (CSV)</button>
+    <p id="download-status" role="status">Both R downloads capture the current variables and weights.</p>
+  </div></details>
 </nav>
 <div id="boot" class="boot">
     <form id="unlock-form" class="unlock-card">
@@ -126,4 +133,4 @@
 <footer id="foot"></footer>
 
 
-<script type="module" src="unlock.js?v=28b17a534ce7"></script></body></html>
+<script type="module" src="unlock.js?v=edb22a994965"></script></body></html>

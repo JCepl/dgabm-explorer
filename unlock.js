@@ -1,4 +1,4 @@
-import { decryptJson } from './crypto.mjs?v=3e7c8efd5def';
+import { decryptJson } from './crypto.mjs?v=464a07933116';
 
 const form = document.getElementById('unlock-form');
 const password = document.getElementById('unlock-password');
@@ -9,7 +9,7 @@ let packet;
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = src + '?v=3e7c8efd5def';
+    script.src = src + '?v=464a07933116';
     script.async = false;
     script.onload = resolve;
     script.onerror = () => reject(new Error('A file could not load. Please reload and try again.'));
@@ -27,7 +27,7 @@ form.addEventListener('submit', async event => {
   try {
     if (!crypto.subtle) throw new Error('Use a modern browser over HTTPS to unlock this app.');
     if (!packet) {
-      const response = await fetch('dataset.enc.json?v=3e7c8efd5def');
+      const response = await fetch('dataset.enc.json?v=464a07933116');
       if (!response.ok) throw new Error('The encrypted dataset could not load. Please try again.');
       packet = await response.json();
     }

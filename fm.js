@@ -39,31 +39,42 @@
   }
   // generic heatmap: keys (ordered), Z (values), optional tree {merges, order}
   function heat(el, keys, Z, o) {
-    const m = keys.length, text = keys.map((a, i) => keys.map((b, j) => o.hover(i, j)));
-    const lbls = keys.map(k => `<span style="color:${G.GCOL[G.F[k].group]}">${G.esc(lab(k).length > 24 ? lab(k).slice(0, 22) + '…' : lab(k))}</span>`);
-    const tr = [{ type: 'heatmap', x: keys.map((_, i) => i), y: keys.map((_, i) => i), z: Z, text, hoverinfo: 'text', colorscale: o.scale, zmin: o.zmin, zmax: o.zmax, xaxis: 'x', yaxis: 'y', xgap: 0, ygap: 0, colorbar: { orientation: 'h', x: 1, xanchor: 'right', y: 1.0, yanchor: 'bottom', len: 0.3, thickness: 10, title: { text: o.cbar, side: 'top' } } }];
-    // A fixed cell size keeps the matrix square and its numbers readable.
-    const cell=G.cell||14,mg=o.tree?{l:20,r:190,t:20,b:190}:{l:190,r:20,t:20,b:190},inner=Math.ceil(m*cell/(o.tree?.88:1)),W=inner+mg.l+mg.r,H=inner+mg.t+mg.b,dom=o.tree?{x:[.12,1],y:[0,.88]}:{x:[0,1],y:[0,1]};
-    const tickSize=Math.max(5,Math.min(10,Math.round(cell*.72))),numSize=Math.max(6,Math.min(12,Math.round(cell*.34)));
-    $(el).style.width=W+'px';$(el).style.height=H+'px';
-    const xs=[],ys=[],numbers=[],colours=[];
-    Z.forEach((row,i)=>row.forEach((v,j)=>{
-      if(v==null||!Number.isFinite(v))return;
-      xs.push(j);ys.push(i);numbers.push(o.format?o.format(v):String(v));
-      const scale=Math.max(0,Math.min(1,(v-o.zmin)/(o.zmax-o.zmin)));
-      colours.push(o.zmin<0?(scale<.22||scale>.78?'#fff':'#263238'):(scale>.55?'#fff':'#263238'));
-    }));
-    if(cell>=20)tr.push({type:'scatter',mode:'text',x:xs,y:ys,text:numbers,textfont:{size:numSize,color:colours},hoverinfo:'skip',showlegend:false});
-    const lay = {width:W,height:H,autosize:false,margin:mg,paper_bgcolor:'#fff',plot_bgcolor:'#fff',font:{size:10,color:G.font()},
-      xaxis:{domain:dom.x,tickmode:'array',tickvals:keys.map((_,i)=>i),ticktext:lbls,tickangle:90,tickfont:{size:tickSize},range:[-.5,m-.5],showgrid:false,zeroline:false,automargin:false,constrain:'domain'},
-      yaxis:{domain:dom.y,tickmode:'array',tickvals:keys.map((_,i)=>i),ticktext:lbls,tickfont:{size:tickSize},range:[m-.5,-.5],showgrid:false,zeroline:false,side:o.tree?'right':'left',automargin:false,scaleanchor:'x',scaleratio:1,constrain:'domain'},shapes:[],showlegend:false};
-    if (o.bounds) o.bounds.forEach(b => { lay.shapes.push({ type: 'line', x0: b - 0.5, x1: b - 0.5, y0: -0.5, y1: m - 0.5, line: { color: '#fff', width: 3 } }, { type: 'line', y0: b - 0.5, y1: b - 0.5, x0: -0.5, x1: m - 0.5, line: { color: '#fff', width: 3 } }); });
-    if (o.tree) {
-      const pos = new Map(o.tree.order.map((l, i) => [l, i])), d = dendLines(o.tree.merges, m, pos);
+    // Pixel plan (no scaleanchor/constrain: they squeezed the matrix and let the dendrograms drift away from their cells).
+    // Without tree:  [names][matrix]            names left + bottom
+    // With tree:     [dendrogram][names][matrix][names]  and, vertically, [dendrogram][names][matrix][names]
+    const m = keys.length, cell = G.cell || 14, tree = !!o.tree, heatPx = m * cell, DEND = 90, LABW = 170, clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const short = k => { const t = lab(k); return t.length > 26 ? t.slice(0, 24) + '…' : t; };
+    const lbls = keys.map(k => `<span style="color:${G.GCOL[G.F[k].group]}">${G.esc(short(k))}</span>`);
+    const tickSize = clamp(Math.round(cell * .72), 5, 10), numSize = clamp(Math.round(cell * .34), 6, 12);
+    const text = keys.map((a, i) => keys.map((b, j) => o.hover(i, j)));
+    const mg = tree ? { l: 10, r: 190, t: 70, b: 190, autoexpand: false } : { l: 190, r: 20, t: 70, b: 190, autoexpand: false };   // fixed margins: nothing may squeeze the plot area
+    const PW = tree ? DEND + LABW + heatPx : heatPx, PH = tree ? DEND + LABW + heatPx : heatPx;      // plot area in px
+    const W = PW + mg.l + mg.r, H = PH + mg.t + mg.b;
+    const hx = tree ? [(DEND + LABW) / PW, 1] : [0, 1], hy = tree ? [0, heatPx / PH] : [0, 1];
+    $(el).style.width = W + 'px'; $(el).style.height = H + 'px';
+    const idx = keys.map((_, i) => i), rng = [-.5, m - .5];
+    const tr = [{ type: 'heatmap', x: idx, y: idx, z: Z, text, hoverinfo: 'text', colorscale: o.scale, zmin: o.zmin, zmax: o.zmax, xaxis: 'x', yaxis: 'y', xgap: 0, ygap: 0,
+      colorbar: { orientation: 'h', x: 1, xanchor: 'right', y: 1.0, yanchor: 'bottom', len: 0.3, thickness: 10, title: { text: o.cbar, side: 'top' } } }];
+    if (cell >= 20) {
+      const xs = [], ys = [], numbers = [], colours = [];
+      Z.forEach((row, i) => row.forEach((v, j) => { if (v == null || !Number.isFinite(v)) return; xs.push(j); ys.push(i); numbers.push(o.format ? o.format(v) : String(v));
+        const sc = Math.max(0, Math.min(1, (v - o.zmin) / (o.zmax - o.zmin))); colours.push(o.zmin < 0 ? (sc < .22 || sc > .78 ? '#fff' : '#263238') : (sc > .55 ? '#fff' : '#263238')); }));
+      tr.push({ type: 'scatter', mode: 'text', x: xs, y: ys, text: numbers, textfont: { size: numSize, color: colours }, hoverinfo: 'skip', showlegend: false });
+    }
+    const ticks = side => ({ tickmode: 'array', tickvals: idx, ticktext: lbls, tickfont: { size: tickSize }, showgrid: false, zeroline: false, automargin: false, range: rng });
+    const lay = { width: W, height: H, autosize: false, margin: mg, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { size: 10, color: G.font() }, shapes: [], showlegend: false,
+      xaxis: Object.assign(ticks(), { domain: hx, tickangle: 90 }),
+      yaxis: Object.assign(ticks(), { domain: hy, range: [m - .5, -.5], side: tree ? 'right' : 'left' }) };
+    if (o.bounds) o.bounds.forEach(b => lay.shapes.push({ type: 'line', x0: b - .5, x1: b - .5, y0: -.5, y1: m - .5, line: { color: '#fff', width: 3 } }, { type: 'line', y0: b - .5, y1: b - .5, x0: -.5, x1: m - .5, line: { color: '#fff', width: 3 } }));
+    if (tree) {
+      const pos = new Map(o.tree.order.map((l, i) => [l, i])), d = dendLines(o.tree.merges, m, pos), top = [(heatPx + LABW) / PH, 1];
       tr.push({ type: 'scatter', mode: 'lines', x: d.X, y: d.Y, xaxis: 'x2', yaxis: 'y2', line: { color: '#37474F', width: 1 }, hoverinfo: 'skip' });
       tr.push({ type: 'scatter', mode: 'lines', x: d.Y, y: d.X, xaxis: 'x3', yaxis: 'y3', line: { color: '#37474F', width: 1 }, hoverinfo: 'skip' });
-      lay.xaxis2 = { domain: dom.x, range: [-0.5, m - 0.5], visible: false, anchor: 'y2' }; lay.yaxis2 = { domain: [0.90, 1], range: [0, d.hmax * 1.02], visible: false, anchor: 'x2' };
-      lay.xaxis3 = { domain: [0, 0.10], range: [d.hmax * 1.02, 0], visible: false, anchor: 'y3' }; lay.yaxis3 = { domain: dom.y, range: [m - 0.5, -0.5], visible: false, anchor: 'x3' };
+      // the names also on the dendrogram sides (left and top), on overlay axes that share the matrix' own coordinates
+      tr.push({ type: 'scatter', mode: 'markers', x: [0], y: [0], xaxis: 'x4', yaxis: 'y4', marker: { opacity: 0 }, hoverinfo: 'skip', showlegend: false });
+      lay.xaxis2 = { domain: hx, range: rng, visible: false, anchor: 'y2' }; lay.yaxis2 = { domain: top, range: [0, d.hmax * 1.02], visible: false, anchor: 'x2' };
+      lay.xaxis3 = { domain: [0, DEND / PW], range: [d.hmax * 1.02, 0], visible: false, anchor: 'y3' }; lay.yaxis3 = { domain: hy, range: [m - .5, -.5], visible: false, anchor: 'x3' };
+      lay.xaxis4 = Object.assign(ticks(), { overlaying: 'x', side: 'top', anchor: 'y', tickangle: -90 }); lay.yaxis4 = Object.assign(ticks(), { overlaying: 'y', side: 'left', anchor: 'x', range: [m - .5, -.5] });
     }
     Plotly.react(el, tr, lay, { displaylogo: false, responsive: false, scrollZoom: false, modeBarButtonsToRemove: ['select2d', 'lasso2d'] });
     const div = $(el); if (div.removeAllListeners) div.removeAllListeners('plotly_click');

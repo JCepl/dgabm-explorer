@@ -2,9 +2,11 @@
   await G.init();
   await G.extra();
   G.$('variable-search').oninput=()=>G.variables.render();
-  const mods = { pca: G.pca, fm: G.fm, cite: G.cite, dict: G.dict };
+  const mods = { intro:{setup(){},render(){}}, pca: G.pca, fm: G.fm, cite: G.cite, dict: G.dict };
   Object.values(mods).forEach(m => m.setup()); G.ext.setup(); G.exports.setup();
-  const dirty = new Set(Object.keys(mods)); let cur = 'pca';
+  G.$('intro-retained').textContent=G.D.n;G.$('intro-total').textContent=G.D.n_all;G.$('intro-variables').textContent=G.D.features.length;
+  document.querySelectorAll('[data-open]').forEach(button=>button.onclick=()=>show(button.dataset.open));
+  const dirty = new Set(Object.keys(mods)); let cur = 'intro';
   function show(t) {
     cur = t; document.querySelectorAll('nav a[data-tab]').forEach(a => a.classList.toggle('on', a.dataset.tab === t));
     document.querySelectorAll('.tab').forEach(s => s.classList.toggle('on', s.id === 'tab-' + t));
@@ -25,7 +27,7 @@
   G.$('inclx-n').textContent = G.D.n_all - G.D.n; G.$('inclx').onchange = e => G.setIncludeExcluded(e.target.checked);
   G.on('view', () => { if (cur === 'pca') G.measureUpdate(() => G.pca.renderView()); else dirty.add('pca'); });
   document.querySelectorAll('nav a[data-tab]').forEach(a => a.onclick = () => show(a.dataset.tab));
-  const start = (location.hash || '#pca').slice(1); show(mods[start] ? start : 'pca');
+  const start = (location.hash || '#intro').slice(1); show(mods[start] ? start : 'intro');
   const setFoot = () => { G.$('foot').textContent = `Data exported ${G.D.generated} from the R pipeline · ${G.n} articles${G.st.includeExcluded ? ' (including the excluded papers)' : ''} · all analysis runs in your browser (PCA, Ward clustering and silhouettes agree with R to ~1e-12).`; };
   setFoot(); G.on('papers', setFoot);
   G.$('boot').remove();

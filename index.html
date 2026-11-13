@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=1a10cfb43967"></head><body class="locked">
+<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=a56cc2813a9e"></head><body class="locked">
 <nav>
-  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.4 ✓</span>
-  <a data-tab="pca" class="on">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data dictionary</a>
+  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.5 ✓</span>
+  <a data-tab="intro" class="on">Start here</a><a data-tab="pca">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data dictionary</a>
   <span class="sp"></span><button class="btn" onclick="location.reload()">Lock</button>
   <details class="download-menu" id="download-menu"><summary>Download</summary><div class="download-panel">
     <label for="export-figure">Result to export</label><select id="export-figure"></select>
@@ -25,7 +25,22 @@
   </div>
 <main>
 
-<section id="tab-pca" class="tab on">
+<section id="tab-intro" class="tab intro-page on" aria-label="Introduction">
+  <div class="intro-wrap">
+    <header class="intro-heading"><p class="intro-eyebrow">DG-ABM literature explorer</p><h1>Explore the papers, models and connections.</h1><p>An interactive companion to the review of demo-genetic agent-based models. Browse the coded evidence, compare model characteristics and see how studies connect through citations and shared authors.</p></header>
+    <div class="intro-facts"><span><b id="intro-retained"></b> papers in the main analysis</span><span><b id="intro-total"></b> papers in the source table</span><span><b id="intro-variables"></b> coded variables</span></div>
+    <div class="intro-views">
+      <button data-open="pca"><strong>PCA and hierarchy <span>↗</span></strong><p>Compare papers by their selected characteristics. Click a point to inspect a paper; change the variables in the source-column grid below the plots.</p></button>
+      <button data-open="fm"><strong>Feature matrix <span>↗</span></strong><p>See which features occur together and compare correlations. For Pearson r, blue means −1, white 0 and red +1. Zoom in to read cell values.</p></button>
+      <button data-open="cite"><strong>Citations and authors <span>↗</span></strong><p>Follow citation arrows and shared-author connections. Switch either layer on or off, or click a paper to explore its neighbourhood.</p></button>
+      <button data-open="dict"><strong>Source data and definitions <span>↗</span></strong><p>Search the original table, read column definitions and trace coded variables back to their source columns.</p></button>
+    </div>
+    <div class="intro-bottom"><section><h2>How to start</h2><ol><li>Open PCA and inspect a few papers.</li><li>Scroll to Variables to include or exclude characteristics. Management starts off; every weight starts at 1.</li><li>Compare the matrix and network views, then use Download to save a figure or tables with the actual settings, data and R code.</li></ol></section><aside><h2>How to interpret it</h2><p>The clusters are exploratory. The 2D PCA map shows only part of the variation; check the explained variance and method notes before interpreting groups.</p><p>The excluded-paper switch adds reviewer-excluded records for sensitivity checks. Shared-author links match names and initials, not verified identities.</p><a href="https://docs.google.com/spreadsheets/d/1j7Kj7MRvyBxyDpo8_B2IPc6U6CHd52xa/edit?gid=335766374" target="_blank" rel="noopener">View the source Google Sheet ↗</a></aside></div>
+  </div>
+</section>
+
+
+<section id="tab-pca" class="tab">
   <div class="bar pca-toolbar">
     <div class="row">
       <span class="help">All features</span>
@@ -136,4 +151,4 @@
 <footer id="foot"></footer>
 
 
-<script type="module" src="unlock.js?v=1a10cfb43967"></script></body></html>
+<script type="module" src="unlock.js?v=a56cc2813a9e"></script></body></html>

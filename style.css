@@ -215,6 +215,13 @@ table.mat thead th { min-width:150px; }
 .variable-tools > details { margin:16px 0; }
 @media(max-width:600px){.variable-grid{grid-template-columns:1fr}}
 
+/* Variables stay below the plots on the same PCA page. */
+#tab-pca.on { display:block; overflow:auto; scroll-behavior:smooth; }
+#tab-pca .workspace { height:68vh; min-height:480px; max-height:700px; }
+#variables-section { scroll-margin-top:12px; margin-top:16px; padding-bottom:18px; }
+.variable-card .source-label { color:#697984; font-size:9px; margin-top:3px; line-height:1.35; }
+#variables-jump { margin-left:auto; }
+
 body.locked > nav, body.locked > main, body.locked > footer { display:none; }
 .unlock-card { width:min(360px, calc(100vw - 64px)); padding:30px; background:#fff; color:#263238; border-radius:12px; box-shadow:0 3px 20px #12304a18; }
 .unlock-card h1 { font-size:21px; margin-top:0; color:#12304a; }

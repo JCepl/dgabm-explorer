@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=05429a067d1e"></head><body class="locked">
+<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=3dcde348ca6e"></head><body class="locked">
 <nav>
-  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.2 ✓</span>
+  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.3 ✓</span>
   <a data-tab="pca" class="on">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data dictionary</a>
   <span class="sp"></span><button class="btn" onclick="location.reload()">Lock</button>
   <details class="download-menu" id="download-menu"><summary>Download</summary><div class="download-panel">
@@ -48,15 +48,8 @@
         <button data-view="fit" role="tab" aria-selected="false">Loadings</button>
         <button data-view="clusters" role="tab" aria-selected="false">Clusters &amp; splits</button>
         <button data-view="weights" role="tab" aria-selected="false">Weights &amp; screening</button>
-        <button data-view="variables" role="tab" aria-selected="false">Variables · source columns</button>
+        <button type="button" id="variables-jump" title="Scroll to the variable tables on this page">Variables ↓</button>
       </div>
-      <div id="view-variables" class="workspace-view view-scroll" role="tabpanel">  <div class="variable-tools">
-    <h3>Variables by source column</h3><p class="help">Each card is one column of the current Google Sheet. Check variables to include them; weights remain 1 until changed.</p><input id="variable-search" type="search" placeholder="Find a variable or source column…" aria-label="Find variables">
-    <p class="help">Click a feature to include it. <a href="#" id="recommended">Overall view</a> · <a href="#" id="r20">Binary 20</a> · <a href="#" id="rst">Legacy start</a> · <a href="#" id="rw">Reset weights</a>.</p>
-    <div class="notes" id="featnote"></div>
-    <div class="wmode" hidden><label><input type="checkbox" id="wmode"> Weight mode: click +step, shift-click −step</label> <label>step <select id="wstep"><option value="1">1</option><option value="0.5">0.5</option><option value="0.25">0.25</option><option value="0.1">0.1</option><option value="0.05">0.05</option></select></label></div>
-    <div class="variable-grid" id="chips"></div><details><summary>Review other source columns</summary><p class="help">Counts show non-empty, reported text; reporting does not establish comparable numeric units. New candidates remain off until their coding is reviewed.</p><div id="column-review"></div></details>
-</div></div>
       <div id="view-map" class="workspace-view on" role="tabpanel">
         <div class="map-grid">
           <div class="plot-card"><h4 class="card-title">PCA map <button type="button" class="expand-btn" data-expand title="Enlarge to a full window (Esc closes)">⤢ Enlarge</button></h4><p class="panel-help">Hover or click a paper. Gold rings mark model papers. <span id="map-variance"></span></p><div class="panel" id="pca"></div></div>
@@ -81,6 +74,14 @@
 
     </div>
   </div>
+      <section id="variables-section" aria-label="Variables by source column">  <div class="variable-tools">
+    <h3>Variables by source column</h3><p class="help">Each card is one column of the current Google Sheet. Check variables to include them; weights remain 1 until changed.</p><input id="variable-search" type="search" placeholder="Find a variable or source column…" aria-label="Find variables">
+    <p class="help">Click a feature to include it. <a href="#" id="recommended">Overall view</a> · <a href="#" id="r20">Binary 20</a> · <a href="#" id="rst">Legacy start</a> · <a href="#" id="rw">Reset weights</a>.</p>
+    <div class="notes" id="featnote"></div>
+    <div class="wmode" hidden><label><input type="checkbox" id="wmode"> Weight mode: click +step, shift-click −step</label> <label>step <select id="wstep"><option value="1">1</option><option value="0.5">0.5</option><option value="0.25">0.25</option><option value="0.1">0.1</option><option value="0.05">0.05</option></select></label></div>
+    <div class="variable-grid" id="chips"></div><details><summary>Review other source columns</summary><p class="help">Counts show non-empty, reported text; reporting does not establish comparable numeric units. New candidates remain off until their coding is reviewed.</p><div id="column-review"></div></details>
+</div></section>
+
 </section>
 
 <section id="tab-fm" class="tab">
@@ -135,4 +136,4 @@
 <footer id="foot"></footer>
 
 
-<script type="module" src="unlock.js?v=05429a067d1e"></script></body></html>
+<script type="module" src="unlock.js?v=3dcde348ca6e"></script></body></html>

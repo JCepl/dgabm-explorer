@@ -17,6 +17,7 @@
     document.querySelectorAll('.workspace-view').forEach(view => view.classList.toggle('on', view.id === 'view-' + button.dataset.view));
     resizeVisiblePlots();
   });
+  document.getElementById('variables-jump').onclick=()=>document.getElementById('variables-section').scrollIntoView({behavior:'smooth',block:'start'});
   const citationButtons = document.querySelectorAll('#citation-tabs [data-cview]');
   citationButtons.forEach(button => button.onclick = () => {
     citationButtons.forEach(other => other.classList.toggle('on', other === button));

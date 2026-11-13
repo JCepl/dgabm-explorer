@@ -68,11 +68,15 @@
     G.patchPlotly();
     const D = G.D = window.DGABM_DATA.core;
     G.varied = Object.fromEntries(D.columns.map((f, j) => [f, D.X.some(row => row[j] !== D.X[0][j])]));
+    G.preset = window.DGABM_PRESET;
+    G.excluded = new Set(G.preset?.excludedFeatures || []);
+    G.recommendedFeatures = (D[G.preset?.featureSet] || D.startup).filter(f => !G.excluded.has(f));
     G.n = D.n; G.col = new Map(D.columns.map((c, i) => [c, i])); G.F = Object.fromEntries(D.features.map(f => [f.key, f]));
     G.binKeys = D.features.filter(f => f.group !== 'continuous' && f.binary).map(f => f.key);       // the 47 candidate 0/1 features, in group order
     G.prev = Object.fromEntries(G.binKeys.map(k => [k, D.X.reduce((s, r) => s + r[G.col.get(k)], 0)]));
-    G.st = { scope: 'inputs', ticks: new Set(D.startup), w: Object.fromEntries(D.columns.map(c => [c, 1])), cw: Object.fromEntries(D.group_order.map(g => [g, 1])), k: 7, auto: true, sel: null, cache: new Map(), load: true, topn: 7, mark: true, d3: false, wmode: false };
-    G.inScope = () => G.st.scope === 'all' ? D.columns : D.scopes[G.st.scope];
+    G.st = { scope: G.preset?.scope || 'inputs', ticks: new Set(G.recommendedFeatures), w: Object.fromEntries(D.columns.map(c => [c, 1])), cw: Object.fromEntries(D.group_order.map(g => [g, 1])), k: G.preset?.k || 7, auto: !G.preset, sel: null, cache: new Map(), load: true, topn: 7, mark: true, d3: false, wmode: false };
+    G.inScope = () => (G.st.scope === 'all' ? D.columns : D.scopes[G.st.scope]).filter(f => !G.excluded.has(f));
+    G.isRecommended = () => G.st.k === G.preset?.k && G.compute().feats.length === G.recommendedFeatures.length && G.compute().feats.every(f => G.recommendedFeatures.includes(f) && G.ew(f) === 1);
   };
 
   // analysis for the current selection (cached)
@@ -95,7 +99,7 @@
   G.curK = R => (G.st.auto ? R.bestK : G.st.k);
   G.cur = function () { const R = G.compute(); if (R.error) return null; if (G.st.auto) G.st.k = R.bestK; return { R, lab: G.labels(R) }; };
   // toggle one feature in the shared selection
-  G.toggle = function (key) { const st = G.st; if (st.ticks.has(key)) st.ticks.delete(key); else { st.ticks.add(key); if (st.w[key] <= 0) st.w[key] = 1; } G.emit('state'); };
+  G.toggle = function (key) { if (G.excluded.has(key)) return; const st = G.st; if (st.ticks.has(key)) st.ticks.delete(key); else { st.ticks.add(key); if (st.w[key] <= 0) st.w[key] = 1; } G.emit('state'); };
   G.mean = a => a.reduce((s, v) => s + v, 0) / (a.length || 1);
   G.prevIn = (key, ids) => ids.length ? G.mean(ids.map(i => G.D.X[i][G.col.get(key)])) : 0;
 })();

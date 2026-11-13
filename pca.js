@@ -24,13 +24,16 @@
   function notes(R, lab) {
     const st = G.st, p = R.P, silK = R.sil[R.ks.indexOf(st.k)], best = Math.max(...R.sil), edge = R.bestK === G.KR[0] || R.bestK === G.KR[1];
     $('scopenote').textContent = { inputs: 'Inputs only: how the models are built (interaction, traits, genetics, management, QTL / alleles / heritability / generations). The 16 output indicators are left out.', all: 'Inputs + outputs: how the models are built and what they report.', outputs: 'Outputs only: what the models report (16 output indicators and the number of outputs).' }[st.scope];
-    $('quickstats').innerHTML = `<b>${G.n} papers</b><span>${R.feats.length} features</span><span>PC1–${p.nPc}: ${p.cumulative[p.nPc - 1].toFixed(1)}%</span><span>k = ${st.k}</span><span>Silhouette ${silK.toFixed(3)}</span>${best < 0.25 ? '<span class="warn">Weak cluster structure</span>' : ''}${edge ? '<span class="warn">Best k at range edge</span>' : ''}`;
+    $('quickstats').innerHTML = `<b>${G.n} papers</b><span>${R.feats.length} features</span><span>PC1–${p.nPc}: ${p.cumulative[p.nPc - 1].toFixed(1)}%</span><span>k = ${st.k}</span><span>Silhouette ${silK.toFixed(3)}</span>${best < 0.25 ? '<span class="warn">Weak cluster structure</span>' : ''}${edge ? `<span class="warn">Silhouette peak at k=${R.bestK} (range edge)</span>` : ''}`;
+    $('quickstats').insertAdjacentHTML('beforeend', `<span>Management off</span>${G.isRecommended() ? '<b>Reviewed view</b>' : ''}`);
+    $('map-variance').textContent = `This 2D map shows ${(p.explained[0] + p.explained[1]).toFixed(1)}% of variance.`;
     const mods = [...lab].map((l, i) => G.D.articles[i].model ? l : 0).filter(Boolean), dist = {}; mods.forEach(l => dist[l] = (dist[l] || 0) + 1);
     $('note').innerHTML = `<b>${R.feats.length} features</b>${R.feats.some(f => G.ew(f) !== 1) ? ' (weights applied)' : ''} standardized, PC1-PC${p.nPc} retained (${p.cumulative[p.nPc - 1].toFixed(1)}% of the variance), Ward.D2 on Euclidean distances between those PCs. Average silhouette at k = ${st.k}: <b>${silK.toFixed(3)}</b>; over k = ${G.KR[0]}-${G.KR[1]} the maximum is at k = ${R.bestK} (${best.toFixed(3)}). ` +
       (best < 0.25 ? '<span class="warn">Warning: the best silhouette is below 0.25, so the cluster structure is weak - treat the clusters as a rough guide, not as natural groups.</span> ' : '') +
       (edge ? `<span class="warn">Warning: the best k sits at the edge of the offered range (k = ${R.bestK}), so there is no clear natural number of clusters.</span> ` : '') +
       `The 27 model papers fall into: ${Object.keys(dist).map(c => 'C' + c + ': ' + dist[c]).join(', ')}.`;
     const excluded = R.skipped?.length ? `<div class="warn">Constant features left out: ${R.skipped.map(f => G.esc(G.F[f].label)).join(', ')}.</div>` : '';
+    $('note').insertAdjacentHTML('beforeend', `<br>${G.esc(G.preset?.rationale || '')}`);
     const bad = R.feats.filter(f => G.F[f].binary && G.prev[f] !== undefined && (G.prev[f] < 0.05 * G.n || G.prev[f] > 0.95 * G.n));
     const l1 = Array.from(p.loadings[0]), same = Math.max(l1.filter(v => v > 0).length, l1.filter(v => v < 0).length) / l1.length;
     $('featnote').innerHTML = excluded + (bad.length ? `<div class="warn">Note: ${bad.map(f => G.esc(G.F[f].label)).join(', ')} fall outside the 5-95% prevalence rule; standardizing near-constant columns amplifies noise.</div>` : '') +
@@ -57,7 +60,7 @@
       const ids = [...lab].map((l, i) => l === c ? i : -1).filter(i => i >= 0); if (!ids.length) continue;
       if (!three && ids.length >= 4) { const e = ellipse(ids.map(i => [p.scores[i][0], p.scores[i][1]]), 0.68); tr.push({ x: e.map(v => v[0]), y: e.map(v => v[1]), type: 'scatter', mode: 'lines', fill: 'toself', fillcolor: ci(c) + '22', line: { width: 0 }, hoverinfo: 'skip', showlegend: false }); }
       const mk = i => st.mark && G.D.articles[i].model;
-      const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c, type: three ? 'scatter3d' : 'scatter', mode: 'markers+text',
+      const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c + (G.isRecommended() ? ' · ' + G.preset.labels[c - 1] : ''), type: three ? 'scatter3d' : 'scatter', mode: 'markers+text',
         textfont: { size: three ? 9 : 8, color: '#fff' }, marker: { color: ci(c), size: ids.map(i => mk(i) ? (three ? 13 : 21) : (three ? 10 : 16)), line: { color: ids.map(i => mk(i) ? '#FFD166' : '#fff'), width: ids.map(i => mk(i) ? 3 : 1) } } };
       if (three) { t.z = ids.map(i => p.scores[i][2]); t.marker.line = { color: '#fff', width: 1 }; }
       tr.push(t);
@@ -141,7 +144,7 @@
     for (let c = 1; c <= k; c++) {
       const ids = [...lab].map((l, i) => l === c ? i : -1).filter(i => i >= 0), rest = [...lab].map((l, i) => l !== c ? i : -1).filter(i => i >= 0);
       const top = bin.map(f => ({ f, v: G.prevIn(f, ids) })).sort((a, b) => b.v - a.v).slice(0, 3), con = contrast(R, ids, rest, 2), mod = ids.filter(i => G.D.articles[i].model).length;
-      rows.push(`<tr><td><span class="sw" style="background:${ci(c)}"></span>C${c}</td><td>${ids.length}</td><td>${Math.round(100 * ids.length / n)}%</td><td>${G.mean(ids.map(i => sil[i])).toFixed(3)}</td><td>${mod}</td><td>${top.map(x => `${G.esc(G.F[x.f].label)} ${Math.round(100 * x.v)}%`).join(', ')}</td><td>${fmtC(con)}</td></tr>`);
+      rows.push(`<tr><td><span class="sw" style="background:${ci(c)}"></span>C${c}${G.isRecommended() ? ' · ' + G.esc(G.preset.labels[c - 1]) : ''}</td><td>${ids.length}</td><td>${Math.round(100 * ids.length / n)}%</td><td>${G.mean(ids.map(i => sil[i])).toFixed(3)}</td><td>${mod}</td><td>${top.map(x => `${G.esc(G.F[x.f].label)} ${Math.round(100 * x.v)}%`).join(', ')}</td><td>${fmtC(con)}</td></tr>`);
     }
     $('ctab').innerHTML = `<table class="t"><tr><th>Cluster</th><th>Papers</th><th>Share</th><th>Silhouette</th><th>Model papers</th><th>Most frequent features</th><th>Strongest contrast vs rest</th></tr>${rows.join('')}</table>`;
     const srows = []; for (let kk = G.KR[0]; kk <= G.KR[1]; kk++) { const lb = G.C.cutree(R.merges, n, kk), s = splitInfo(R, lb, kk); srows.push(`<tr><td>${kk}</td><td>${s.par}</td><td>${s.ca} (${s.a.length}) / ${s.cb} (${s.b.length})</td><td>${s.q.height.toFixed(2)}</td><td>${fmtC(s.top)}</td></tr>`); }
@@ -209,7 +212,8 @@
     $('wmode').onchange = e => { st.wmode = e.target.checked; };
     $('pcsel').onchange = e => { $('pcsel').dataset.v = e.target.value; const c = G.cur(); if (c) drawLoadings(c.R); };
     $('rw').onclick = e => { e.preventDefault(); G.D.columns.forEach(c => st.w[c] = 1); G.emit('state'); };
-    $('r20').onclick = e => { e.preventDefault(); st.ticks = new Set(G.D.default20); st.scope = 'all'; $('scope').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.s === 'all')); G.emit('scope'); G.emit('state'); };
+    $('r20').onclick = e => { e.preventDefault(); st.ticks = new Set(G.D.default20.filter(f => !G.excluded.has(f))); st.scope = 'all'; $('scope').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.s === 'all')); G.emit('scope'); G.emit('state'); };
+    $('recommended').onclick = e => { e.preventDefault(); st.ticks = new Set(G.recommendedFeatures); st.scope = G.preset.scope; st.k = G.preset.k; st.auto = false; G.D.columns.forEach(f => st.w[f] = 1); G.D.group_order.forEach(g => st.cw[g] = 1); $('scope').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.s === st.scope)); G.emit('scope'); G.ext.weightsPanel(); G.emit('state'); };
     $('rst').onclick = e => { e.preventDefault(); st.ticks = new Set(G.D.startup); G.emit('state'); };
     window.addEventListener('resize', () => { const c = G.cur(); if (c && $('tab-pca').classList.contains('on')) drawDend(c.R, c.lab); });
   };

@@ -1,4 +1,4 @@
-import { decryptJson } from './crypto.mjs?v=3d534ff17c01';
+import { decryptJson } from './crypto.mjs?v=28b17a534ce7';
 
 const form = document.getElementById('unlock-form');
 const password = document.getElementById('unlock-password');
@@ -9,7 +9,7 @@ let packet;
 function loadScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = src + '?v=3d534ff17c01';
+    script.src = src + '?v=28b17a534ce7';
     script.async = false;
     script.onload = resolve;
     script.onerror = () => reject(new Error('A file could not load. Please reload and try again.'));
@@ -27,7 +27,7 @@ form.addEventListener('submit', async event => {
   try {
     if (!crypto.subtle) throw new Error('Use a modern browser over HTTPS to unlock this app.');
     if (!packet) {
-      const response = await fetch('dataset.enc.json?v=3d534ff17c01');
+      const response = await fetch('dataset.enc.json?v=28b17a534ce7');
       if (!response.ok) throw new Error('The encrypted dataset could not load. Please try again.');
       packet = await response.json();
     }
@@ -46,7 +46,7 @@ form.addEventListener('submit', async event => {
   document.body.classList.remove('locked');
   document.getElementById('boot').innerHTML = '<div class="spin"></div>Opening the explorer…';
   try {
-    await Promise.all(['vendor/plotly-cartesian.min.js', 'core.js', 'common.js', 'pca.js',
+    await Promise.all(['vendor/plotly-cartesian.min.js', 'core.js', 'preset.js', 'common.js', 'pca.js',
       'extras.js', 'fm.js', 'cite.js', 'dict.js', 'layout.js', 'main.js'].map(loadScript));
     await window.G.latestUpdate;
     document.documentElement.dataset.unlockMs = (performance.now() - unlockStart).toFixed(1);

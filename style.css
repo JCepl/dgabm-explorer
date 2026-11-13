@@ -163,6 +163,8 @@ footer { flex:0 0 22px; padding:3px 12px; font-size:10px; white-space:nowrap; ov
   .citation-view > .grid2 > .card { padding:7px; font-size:11px; }
   #view-summary .grid2 { grid-template-columns:1fr !important; }
 }
+.feature-panel .help a { display:inline-block; white-space:nowrap; }
+.chip[aria-disabled="true"] { cursor:not-allowed; opacity:.5; }
 
 body.locked > nav, body.locked > main, body.locked > footer { display:none; }
 .unlock-card { width:min(360px, calc(100vw - 64px)); padding:30px; background:#fff; color:#263238; border-radius:12px; box-shadow:0 3px 20px #12304a18; }

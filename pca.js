@@ -120,7 +120,7 @@
   // ---------------------------------------------------------------- inspector
   function select(i) {
     G.st.sel = i; const a = G.D.articles[i], raw = G.hasExtra ? G.D.raw[i] : null, R = G.cur(), c = R ? R.lab[i] : '';
-    const abs = raw ? raw[35] || '' : '', doi = G.hasExtra ? G.D.doi[i] : '';
+    const abs = raw ? raw[G.D.dict.findIndex(d=>d.name==='Abstract')] || '' : '', doi = G.hasExtra ? G.D.doi[i] : '';
     $('info').innerHTML = `<h4>Paper inspector</h4><p style="margin:4px 0"><b>#${a.id}</b> ${G.esc(a.title)}</p><p class="help" style="margin:0">${G.esc(a.authors)} · ${a.year ?? 'year n/a'}${R ? ` · <span class="sw" style="background:${ci(c)}"></span>cluster C${c}` : ''}${a.model ? ' · <b>one of the 27 model papers</b>' : ''}${G.D.cited_by[i] != null ? ` · cited by ${G.D.cited_by[i]} (OpenAlex)` : ''}${doi ? ` · <a href="https://doi.org/${G.esc(doi)}" target="_blank" rel="noopener">DOI</a>` : ''}</p>` + (a.retained === false ? `<p class="warn" style="margin:4px 0">Excluded from the main analysis (square marker): ${G.esc(a.reason || '')}</p>` : '') + (abs ? `<details style="margin-top:6px"><summary>Show abstract</summary><p class="abs">${G.esc(abs)}</p></details>` : (G.hasExtra ? '' : '<p class="help">abstract loading…</p>'));
   }
   P.select = select;
@@ -144,25 +144,7 @@
   }
 
   // ---------------------------------------------------------------- chips
-  function chips() {
-    const st = G.st, D = G.D, box = $('chips'); box.innerHTML = '';
-    D.group_order.forEach(g => {
-      const members = D.features.filter(f => f.group === g && G.inScope().includes(f.key)); if (!members.length) return;
-      const div = document.createElement('div'); div.className = 'grp';
-      div.innerHTML = `<h5>${G.esc(D.group_titles[g])}</h5><div class="lk"><a data-a="all">all</a> · <a data-a="none">none</a></div>`;
-      div.querySelectorAll('a').forEach(a => a.onclick = () => { members.forEach(m => { if (a.dataset.a === 'all') { st.ticks.add(m.key); if (st.w[m.key] <= 0) st.w[m.key] = 1; } else st.ticks.delete(m.key); }); G.emit('state'); });
-      members.forEach(m => {
-        const c = document.createElement('button'), on = st.ticks.has(m.key), add = st.w[m.key] - 1;
-        c.type = 'button'; c.setAttribute('aria-pressed', String(on));
-        c.className = 'chip' + (on ? ' on' : ''); c.textContent = m.label;
-        if (on && Math.abs(add) > 1e-9) { const s = document.createElement('sup'); s.textContent = (add > 0 ? '+' : '−') + Math.abs(+add.toFixed(2)); c.appendChild(s); }
-        c.title = (m.binary ? '0/1 feature, n = ' + (G.prev[m.key] ?? '') : 'number') + ' - click to ' + (on ? 'remove' : 'add');
-        c.onclick = e => { if (st.wmode && on) { const step = st.wstep || 1; st.w[m.key] = Math.max(0.05, +(st.w[m.key] + (e.shiftKey ? -step : step)).toFixed(3)); G.emit('state'); } else G.toggle(m.key); };
-        div.appendChild(c);
-      });
-      box.appendChild(div);
-    });
-  }
+  function chips() { G.variables.render(); }
 
   // ---------------------------------------------------------------- render + controls
   P.render = function () {

@@ -1,5 +1,7 @@
 (async function () {
   await G.init();
+  await G.extra();
+  G.$('variable-search').oninput=()=>G.variables.render();
   const mods = { pca: G.pca, fm: G.fm, cite: G.cite, dict: G.dict };
   Object.values(mods).forEach(m => m.setup()); G.ext.setup(); G.exports.setup();
   const dirty = new Set(Object.keys(mods)); let cur = 'pca';

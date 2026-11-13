@@ -2,7 +2,7 @@
 (function () {
   const T = G.tableExports = {};
   T.names = {
-    all:'All tables', trait_correlations:'Trait correlations', variable_correlations:'Variable correlations', cluster_summary:'Cluster summary', splits:'Hierarchy splits', cluster_profiles:'Cluster feature profiles', screening:'Feature screening',
+    all:'All tables',author_connections:'Shared-author connections',author_connections_visible:'Visible shared-author connections', trait_correlations:'Trait correlations', variable_correlations:'Variable correlations', cluster_summary:'Cluster summary', splits:'Hierarchy splits', cluster_profiles:'Cluster feature profiles', screening:'Feature screening',
     scores:'PCA scores and memberships', loadings:'PCA loadings', variance:'Explained variance',
     feature_matrix:'Binary feature matrix', feature_statistics:'Feature frequencies and variance',
     cooccurrence:'Co-occurrence counts', clustered_cooccurrence:'Clustered co-occurrence counts',
@@ -14,7 +14,7 @@
   };
   T.controls = () => {
     const value = id => G.$(id)?.value || '', radio = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
-    return {search:value('dsearch'),feature_a:value('fa'),feature_b:value('fb'),rescaling:radio('resc'),
+    return {show_citations:G.$('show-citations').checked,show_authors:G.$('show-authors').checked,search:value('dsearch'),feature_a:value('fa'),feature_b:value('fb'),rescaling:radio('resc'),
       citation_focus:+value('cfocus'),citation_depth:+value('cdepth'),citation_scope:radio('cscope'),citation_measure:radio('cmeas'),
       correlation_groups:[...document.querySelectorAll('#corr-groups input:checked')].map(i=>i.value),correlation_order:radio('corder'),correlation_distance:radio('cdist'),component:+value('pcsel'),prevalence_min:+value('sg1'),correlation_max:+value('sg2'),communality_min:+value('sg3')};
   };
@@ -58,12 +58,20 @@
       add('cross_articles',['article_id','authors','title','year'],D.articles.filter((_,i)=>D.X[i][a]&&D.X[i][b]).map(r=>[r.id,r.authors,r.title,r.year]));
     }
     const E=D.edges.map(([a,b])=>[a-1,b-1]).filter(([a,b])=>a>=0&&b>=0&&a<n&&b<n),adj=Array.from({length:n},()=>new Set()),incoming=Array(n).fill(0),outgoing=Array(n).fill(0);
+    const authorEdges=DGABMAuthors.links(D.articles).edges;
+    const authorRows=edges=>edges.map(e=>[D.articles[e.a].id,D.articles[e.b].id,e.authors.join('; '),e.authors.length]);
+    add('author_connections',['paper_a','paper_b','shared_authors','shared_author_count'],authorRows(authorEdges));
     E.forEach(([a,b])=>{adj[a].add(b);adj[b].add(a);outgoing[a]++;incoming[b]++;});
-    let seen=new Set(adj.flatMap((s,i)=>s.size?[i]:[]));
-    if(controls.citation_scope==='focus'){seen=new Set([controls.citation_focus]);let front=[controls.citation_focus];for(let d=0;d<controls.citation_depth;d++){const next=[];front.forEach(i=>adj[i]?.forEach(j=>{if(!seen.has(j)){seen.add(j);next.push(j);}}));front=next;}}
+    const browseAdj=Array.from({length:n},()=>new Set());
+    if(controls.show_citations)E.forEach(([a,b])=>{browseAdj[a].add(b);browseAdj[b].add(a);});
+    if(controls.show_authors)authorEdges.forEach(e=>{browseAdj[e.a].add(e.b);browseAdj[e.b].add(e.a);});
+    let seen=new Set(browseAdj.flatMap((s,i)=>s.size?[i]:[]));
+    if(controls.citation_scope==='focus'){seen=new Set([controls.citation_focus]);let front=[controls.citation_focus];for(let d=0;d<controls.citation_depth;d++){const next=[];front.forEach(i=>browseAdj[i]?.forEach(j=>{if(!seen.has(j)){seen.add(j);next.push(j);}}));front=next;}}
+    add('author_connections_visible',['paper_a','paper_b','shared_authors','shared_author_count'],authorRows(controls.show_authors?authorEdges.filter(e=>seen.has(e.a)&&seen.has(e.b)):[]));
+    if(!seen.size&&controls.citation_scope==='all')seen=new Set(Array.from({length:n},(_,i)=>i));
     const edgeRows=edges=>edges.map(([a,b])=>[D.articles[a].id,D.articles[b].id,D.articles[a].title,D.articles[b].title]);
     add('citation_all_edges',['citing_id','cited_id','citing_title','cited_title'],edgeRows(E));
-    add('citation_edges',['citing_id','cited_id','citing_title','cited_title'],edgeRows(E.filter(([a,b])=>seen.has(a)&&seen.has(b))));
+    add('citation_edges',['citing_id','cited_id','citing_title','cited_title'],edgeRows(controls.show_citations?E.filter(([a,b])=>seen.has(a)&&seen.has(b)):[]));
     add('citation_nodes',['article_id','incoming','outgoing','degree','visible','cluster'],D.articles.map((r,i)=>[r.id,incoming[i],outgoing[i],incoming[i]+outgoing[i],seen.has(i),current?current.lab[i]:1]));
     const lab=current?current.lab:Array(n).fill(1),k=current?settings.k:1,cm=Array.from({length:k},()=>Array(k).fill(0));E.forEach(([a,b])=>cm[lab[a]-1][lab[b]-1]++);
     matrix('citation_counts',cm.map((_,i)=>'C'+(i+1)),cm);matrix('citation_share',cm.map((_,i)=>'C'+(i+1)),cm.map(r=>r.map(v=>v/(r.reduce((a,b)=>a+b,0)||1))));

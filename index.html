@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=626b301597d0"></head><body class="locked">
+<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=05429a067d1e"></head><body class="locked">
 <nav>
-  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.1 ✓</span>
+  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.2 ✓</span>
   <a data-tab="pca" class="on">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data dictionary</a>
   <span class="sp"></span><button class="btn" onclick="location.reload()">Lock</button>
   <details class="download-menu" id="download-menu"><summary>Download</summary><div class="download-panel">
@@ -41,21 +41,22 @@
     <div class="status-row"><span id="quickstats"></span><details class="method-notes"><summary>Method &amp; warnings</summary><div class="method-body"><div class="notes" id="scopenote"></div><div class="notes" id="note"></div></div></details></div>
   </div>
   <div class="workspace">
-  <aside class="card feature-panel" id="feature-panel">
-    <h4>Features used</h4>
-    <p class="help">Click a feature to include it. <a href="#" id="recommended">Overall view</a> · <a href="#" id="r20">Binary 19</a> · <a href="#" id="rst">Legacy start</a> · <a href="#" id="rw">Reset weights</a>.</p>
-    <div class="notes" id="featnote"></div>
-    <div class="wmode"><label><input type="checkbox" id="wmode"> Weight mode: click +step, shift-click −step</label> <label>step <select id="wstep"><option value="1">1</option><option value="0.5">0.5</option><option value="0.25">0.25</option><option value="0.1">0.1</option><option value="0.05">0.05</option></select></label></div>
-    <div class="chipgrid" id="chips"></div>
-</aside>
+
     <div class="pca-stage">
       <div class="workspace-tabs" id="workspace-tabs" role="tablist" aria-label="PCA views">
         <button data-view="map" class="on" role="tab" aria-selected="true">Map &amp; hierarchy</button>
         <button data-view="fit" role="tab" aria-selected="false">Loadings</button>
         <button data-view="clusters" role="tab" aria-selected="false">Clusters &amp; splits</button>
         <button data-view="weights" role="tab" aria-selected="false">Weights &amp; screening</button>
-        <button class="feature-toggle" id="feature-toggle">Features</button>
+        <button data-view="variables" role="tab" aria-selected="false">Variables · source columns</button>
       </div>
+      <div id="view-variables" class="workspace-view view-scroll" role="tabpanel">  <div class="variable-tools">
+    <h3>Variables by source column</h3><p class="help">Each card is one column of the current Google Sheet. Check variables to include them; weights remain 1 until changed.</p><input id="variable-search" type="search" placeholder="Find a variable or source column…" aria-label="Find variables">
+    <p class="help">Click a feature to include it. <a href="#" id="recommended">Overall view</a> · <a href="#" id="r20">Binary 20</a> · <a href="#" id="rst">Legacy start</a> · <a href="#" id="rw">Reset weights</a>.</p>
+    <div class="notes" id="featnote"></div>
+    <div class="wmode" hidden><label><input type="checkbox" id="wmode"> Weight mode: click +step, shift-click −step</label> <label>step <select id="wstep"><option value="1">1</option><option value="0.5">0.5</option><option value="0.25">0.25</option><option value="0.1">0.1</option><option value="0.05">0.05</option></select></label></div>
+    <div class="variable-grid" id="chips"></div><details><summary>Review other source columns</summary><p class="help">Counts show non-empty, reported text; reporting does not establish comparable numeric units. New candidates remain off until their coding is reviewed.</p><div id="column-review"></div></details>
+</div></div>
       <div id="view-map" class="workspace-view on" role="tabpanel">
         <div class="map-grid">
           <div class="plot-card"><h4 class="card-title">PCA map <button type="button" class="expand-btn" data-expand title="Enlarge to a full window (Esc closes)">⤢ Enlarge</button></h4><p class="panel-help">Hover or click a paper. Gold rings mark model papers. <span id="map-variance"></span></p><div class="panel" id="pca"></div></div>
@@ -106,7 +107,7 @@
   <div id="citation-network" class="citation-view on">  <div class="grid2" style="grid-template-columns:300px minmax(0,1fr)">
     <div class="card">
       <label>Focus study<br><select id="cfocus" style="width:100%"></select></label><br><br>
-      <b>Network scope</b><br><label><input type="radio" name="cscope" value="all" checked> All connected studies</label><br><label><input type="radio" name="cscope" value="focus"> Focused neighbourhood</label>
+      <b>Connections</b><br><label><input type="checkbox" id="show-citations" checked> Citation arrows</label><br><label><input type="checkbox" id="show-authors" checked> Shared authors</label><p class="help">Orange dotted lines join papers sharing a normalized surname and initials. These are name matches, not verified identities; ambiguous strings are skipped.</p><b>Network scope</b><br><label><input type="radio" name="cscope" value="all" checked> All connected studies</label><br><label><input type="radio" name="cscope" value="focus"> Focused neighbourhood</label>
       <p><label>Neighbourhood depth <select id="cdepth"><option>1</option><option>2</option></select></label></p>
       <label><input type="checkbox" id="clab" checked> Show article IDs</label>
       <p class="help">Colours follow the clusters of the PCA tab (k as set there). Click an article node to open its one- or two-step neighbourhood.</p>
@@ -134,4 +135,4 @@
 <footer id="foot"></footer>
 
 
-<script type="module" src="unlock.js?v=626b301597d0"></script></body></html>
+<script type="module" src="unlock.js?v=05429a067d1e"></script></body></html>

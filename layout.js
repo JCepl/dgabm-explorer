@@ -24,7 +24,7 @@
     resizeVisiblePlots();
   });
   document.getElementById('crossbox').addEventListener('toggle', resizeVisiblePlots);
-  document.getElementById('feature-toggle').onclick = () => document.querySelector('.workspace').classList.toggle('features-open');
+
   // enlarge a plot card to a full window (Esc or the button closes it)
   function toggleExpand(button) {
     const card = button.closest('.plot-card'), on = card.classList.toggle('expanded');

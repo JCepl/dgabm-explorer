@@ -42,10 +42,12 @@
     // Pixel plan (no scaleanchor/constrain: they squeezed the matrix and let the dendrograms drift away from their cells).
     // Without tree:  [names][matrix]            names left + bottom
     // With tree:     [dendrogram][names][matrix][names]  and, vertically, [dendrogram][names][matrix][names]
-    const m = keys.length, cell = G.cell || 14, tree = !!o.tree, heatPx = m * cell, DEND = 90, LABW = 170, clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const m = keys.length, cell = G.cell || 14, tree = !!o.tree, heatPx = m * cell, DEND = 90, clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
     const short = k => { const t = lab(k); return t.length > 26 ? t.slice(0, 24) + '…' : t; };
     const lbls = keys.map(k => `<span style="color:${G.GCOL[G.F[k].group]}">${G.esc(short(k))}</span>`);
     const tickSize = clamp(Math.round(cell * .72), 5, 10), numSize = clamp(Math.round(cell * .34), 6, 12);
+    const measure=document.createElement('canvas').getContext('2d');measure.font=tickSize+'px '+getComputedStyle(document.body).fontFamily;
+    const LABW=Math.ceil(Math.max(...keys.map(k=>measure.measureText(short(k)).width)))+7;
     const text = keys.map((a, i) => keys.map((b, j) => o.hover(i, j)));
     const mg = tree ? { l: 10, r: 190, t: 70, b: 190, autoexpand: false } : { l: 190, r: 20, t: 70, b: 190, autoexpand: false };   // fixed margins: nothing may squeeze the plot area
     const PW = tree ? DEND + LABW + heatPx : heatPx, PH = tree ? DEND + LABW + heatPx : heatPx;      // plot area in px

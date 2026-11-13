@@ -200,6 +200,21 @@ table.mat thead th { min-width:150px; }
 
 .version-badge { font-size:9px; color:#d7e9df; white-space:nowrap; padding:2px 5px; border:1px solid #ffffff40; border-radius:4px; margin-right:8px; }
 
+.workspace { grid-template-columns:minmax(0,1fr); }
+.variable-tools { padding:8px 12px; }
+#variable-search { width:min(440px,100%); margin:8px 0 14px; padding:8px 10px; }
+.variable-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(330px,1fr)); gap:12px; align-items:start; }
+.variable-card { background:#fff; border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+.variable-card h4 { margin:0; padding:10px 12px; background:#f2f6f9; font-size:13px; }
+.variable-card h4 span { display:block; font-size:10px; color:var(--mut); margin-bottom:3px; }
+.variable-card table { border-collapse:collapse; width:100%; font-size:11px; }
+.variable-card th,.variable-card td { text-align:left; padding:6px; border-bottom:1px solid #edf1f4; }
+.variable-card th { font-weight:500; color:var(--mut); }
+.variable-card td small { display:block; color:var(--mut); }
+.variable-card input[type=number] { width:54px; padding:3px; font-size:11px; }
+.variable-tools > details { margin:16px 0; }
+@media(max-width:600px){.variable-grid{grid-template-columns:1fr}}
+
 body.locked > nav, body.locked > main, body.locked > footer { display:none; }
 .unlock-card { width:min(360px, calc(100vw - 64px)); padding:30px; background:#fff; color:#263238; border-radius:12px; box-shadow:0 3px 20px #12304a18; }
 .unlock-card h1 { font-size:21px; margin-top:0; color:#12304a; }

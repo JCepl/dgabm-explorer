@@ -2,7 +2,7 @@
 (function () {
   const T = G.tableExports = {};
   T.names = {
-    all:'All tables', trait_correlations:'Trait correlations', cluster_summary:'Cluster summary', splits:'Hierarchy splits', cluster_profiles:'Cluster feature profiles', screening:'Feature screening',
+    all:'All tables', trait_correlations:'Trait correlations', variable_correlations:'Variable correlations', cluster_summary:'Cluster summary', splits:'Hierarchy splits', cluster_profiles:'Cluster feature profiles', screening:'Feature screening',
     scores:'PCA scores and memberships', loadings:'PCA loadings', variance:'Explained variance',
     feature_matrix:'Binary feature matrix', feature_statistics:'Feature frequencies and variance',
     cooccurrence:'Co-occurrence counts', clustered_cooccurrence:'Clustered co-occurrence counts',
@@ -16,7 +16,7 @@
     const value = id => G.$(id)?.value || '', radio = name => document.querySelector(`input[name="${name}"]:checked`)?.value;
     return {search:value('dsearch'),feature_a:value('fa'),feature_b:value('fb'),rescaling:radio('resc'),
       citation_focus:+value('cfocus'),citation_depth:+value('cdepth'),citation_scope:radio('cscope'),citation_measure:radio('cmeas'),
-      component:+value('pcsel'),prevalence_min:+value('sg1'),correlation_max:+value('sg2'),communality_min:+value('sg3')};
+      correlation_groups:[...document.querySelectorAll('#corr-groups input:checked')].map(i=>i.value),correlation_order:radio('corder'),correlation_distance:radio('cdist'),component:+value('pcsel'),prevalence_min:+value('sg1'),correlation_max:+value('sg2'),communality_min:+value('sg3')};
   };
   T.build = (settings, current, controls) => {
     const D=G.D,n=G.n,C=G.C,tables={},orders={},labels=f=>G.F[f].label;
@@ -29,6 +29,14 @@
     matrix('cooccurrence',keys,counts);
     const traits=keys.filter(f=>G.F[f].group==='traits'),ti=traits.map(f=>keys.indexOf(f));
     matrix('trait_correlations',traits,ti.map(i=>ti.map(j=>{const p=own[i]/n,q=own[j]/n,den=Math.sqrt(p*(1-p)*q*(1-q));return den?(counts[i][j]/n-p*q)/den:null;})));
+    const cf=D.features.filter(f=>controls.correlation_groups.includes(f.group)).filter(f=>new Set(D.X.map(r=>r[G.col.get(f.key)])).size>1).map(f=>f.key);
+    if(cf.length) {
+      const z=cf.map(f=>{const v=D.X.map(r=>r[G.col.get(f)]),mean=G.mean(v),sd=Math.sqrt(v.reduce((s,x)=>s+(x-mean)**2,0)/(n-1));return v.map(x=>(x-mean)/sd);});
+      const r=z.map(a=>z.map(b=>a.reduce((s,v,i)=>s+v*b[i],0)/(n-1)));
+      let order=cf.map((_,i)=>i);
+      if(controls.correlation_order==='cluster'&&cf.length>1){const m=cf.length,d=new Float64Array(m*m);r.forEach((row,i)=>row.forEach((v,j)=>d[i*m+j]=i===j?0:Math.max(0,1-(controls.correlation_distance==='abs'?Math.abs(v):v))));order=C.leafOrder(C.upgma(d,m),m);}
+      orders.variable_correlations=order;matrix('variable_correlations',order.map(i=>cf[i]),order.map(i=>order.map(j=>r[i][j])));
+    }
     const share=counts.map((r,i)=>r.map(v=>own[i]?v/own[i]:0));
     const phi=counts.map((r,i)=>r.map((v,j)=>{const p=own[i]/n,q=own[j]/n,den=Math.sqrt(p*(1-p)*q*(1-q));return den?(v/n-p*q)/den:0;}));
     const lift=counts.map((r,i)=>r.map((v,j)=>i===j?0:Math.log2((v+.5)/(own[i]*own[j]/n+.5))));

@@ -49,19 +49,20 @@
     for (let t = 0; t <= 64; t++) { const a = 2 * Math.PI * t / 64, u = r * Math.sqrt(Math.max(l1, 0)) * Math.cos(a), v = r * Math.sqrt(Math.max(l2, 0)) * Math.sin(a); out.push([mx + u * Math.cos(th) - v * Math.sin(th), my + u * Math.sin(th) + v * Math.cos(th)]); }
     return out;
   }
-  const hov = i => `<b>#${G.D.articles[i].id}</b> ${G.esc(G.D.articles[i].title.slice(0, 95))}`;
+  const hov = i => `<b>#${G.D.articles[i].id}</b> ${G.esc(G.D.articles[i].title.slice(0, 95))}${G.D.articles[i].retained === false ? '<br><i>excluded paper</i>' : ''}`;
   function drawMap(R, lab) {
     const st = G.st, p = R.P, three = st.d3, tr = [], ann = [], k = st.k, ink = G.font();
     if (three && !G.has3d) { if (window.Plotly && $('pca').data) Plotly.purge('pca'); $('pca').innerHTML = '<div class="skeleton" style="height:100%">Loading the 3D engine…</div>'; G.need3d().then(() => { const cur = G.cur(); if (G.st.d3 && cur) drawMap(cur.R, cur.lab); }); return; }
     if ($('pca').querySelector('.skeleton')) $('pca').innerHTML = '';
     if (window.__lastDim !== undefined && window.__lastDim !== three) Plotly.purge('pca');   // 2D <-> 3D: start from a clean plot
     window.__lastDim = three;
+    const nums = st.nums !== false, lum = hex => { const v = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255); return 0.2126 * v[0] + 0.7152 * v[1] + 0.0722 * v[2]; }, txtCol = c => lum(ci(c)) > 0.58 ? '#1b2630' : '#fff';
     for (let c = 1; c <= k; c++) {
       const ids = [...lab].map((l, i) => l === c ? i : -1).filter(i => i >= 0); if (!ids.length) continue;
       if (!three && ids.length >= 4) { const e = ellipse(ids.map(i => [p.scores[i][0], p.scores[i][1]]), 0.68); tr.push({ x: e.map(v => v[0]), y: e.map(v => v[1]), type: 'scatter', mode: 'lines', fill: 'toself', fillcolor: ci(c) + '12', line: { width: 0 }, hoverinfo: 'skip', showlegend: false }); }
       const mk = i => st.mark && G.D.articles[i].model;
-      const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c + (G.isRecommended() && G.preset.labels[c - 1] ? ' · ' + G.preset.labels[c - 1] : ''), type: three ? 'scatter3d' : 'scatter', mode: 'markers',
-        textfont: { size: three ? 9 : 8, color: '#fff' }, marker: { color: ci(c), size: ids.map(i => mk(i) ? (three ? 10 : 12) : (three ? 7 : 8)), line: { color: ids.map(i => mk(i) ? '#FFD166' : '#fff'), width: ids.map(i => mk(i) ? 2 : .6) } } };
+      const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c + (G.isRecommended() && G.preset.labels[c - 1] ? ' · ' + G.preset.labels[c - 1] : ''), type: three ? 'scatter3d' : 'scatter', mode: nums ? 'markers+text' : 'markers',
+        textfont: { size: three ? 9 : 9, color: txtCol(c) }, marker: { color: ci(c), symbol: ids.map(i => G.D.articles[i].retained === false ? 'square' : 'circle'), size: ids.map(i => nums ? (mk(i) ? (three ? 14 : 22) : (three ? 11 : 18)) : (mk(i) ? (three ? 10 : 12) : (three ? 7 : 8))), line: { color: ids.map(i => mk(i) ? '#FFD166' : '#fff'), width: ids.map(i => mk(i) ? 2 : .6) } } };
       if (three) { t.z = ids.map(i => p.scores[i][2]); t.marker.line = { color: '#fff', width: 1 }; }
       tr.push(t);
       if (!three) ann.push({ x: G.mean(ids.map(i => p.scores[i][0])), y: G.mean(ids.map(i => p.scores[i][1])), text: 'C' + c, showarrow: false, font: { size: 10, color: ci(c) }, bgcolor: 'rgba(255,255,255,.65)', borderpad: 1 });
@@ -101,7 +102,7 @@
     R.merges.slice().sort((a, b) => b.height - a.height).slice(0, 11).forEach((q, r) => { const kk = r + 2, nd = node.get(q.id);
       out.push(`<g><circle class="fork" cx="${X(nd.x)}" cy="${Y(q.height)}" r="7" data-k="${kk}"${kk === st.k ? ' style="fill:#F4A261"' : ''}><title>cut here: k = ${kk}</title></circle><text x="${X(nd.x)}" y="${Y(q.height) - 10}" text-anchor="middle" font-size="9">${r === 0 ? 'root' : 'k=' + kk}</text></g>`); });
     order.forEach((l, i) => { const a = G.D.articles[l];
-      out.push(`<circle cx="${X(i)}" cy="${Y(0) + 6}" r="${a.model && st.mark ? 3.8 : 2.4}" fill="${ci(lab[l])}" stroke="${a.model && st.mark ? '#E6A800' : 'none'}" stroke-width="1.8" data-i="${l}" style="cursor:pointer"><title>#${a.id} C${lab[l]}: ${G.esc(a.title.slice(0, 80))}</title></circle>`); });
+      out.push(`<circle cx="${X(i)}" cy="${Y(0) + 6}" r="${a.model && st.mark ? 3.8 : 2.4}" fill="${ci(lab[l])}" stroke="${a.model && st.mark ? '#E6A800' : (a.retained === false ? '#222' : 'none')}" stroke-width="1.8" data-i="${l}" style="cursor:pointer"><title>#${a.id} C${lab[l]}: ${G.esc(a.title.slice(0, 80))}</title></circle>`); });
     const step = Math.ceil(hmax / 5 / 5) * 5; for (let t = 0; t <= hmax; t += step) out.push(`<text x="2" y="${Y(t) + 3}">${t}</text><line x1="${m.l - 4}" x2="${m.l}" y1="${Y(t)}" y2="${Y(t)}" stroke="#888"/>`);
     // cluster names under the leaves
     const seen = new Set(); order.forEach((l, i) => { const c = lab[l]; if (seen.has(c)) return; seen.add(c); const idxs = order.map((x, j) => lab[x] === c ? j : -1).filter(j => j >= 0), mid = (idxs[0] + idxs[idxs.length - 1]) / 2;
@@ -120,7 +121,7 @@
   function select(i) {
     G.st.sel = i; const a = G.D.articles[i], raw = G.hasExtra ? G.D.raw[i] : null, R = G.cur(), c = R ? R.lab[i] : '';
     const abs = raw ? raw[35] || '' : '', doi = G.hasExtra ? G.D.doi[i] : '';
-    $('info').innerHTML = `<h4>Paper inspector</h4><p style="margin:4px 0"><b>#${a.id}</b> ${G.esc(a.title)}</p><p class="help" style="margin:0">${G.esc(a.authors)} · ${a.year ?? 'year n/a'}${R ? ` · <span class="sw" style="background:${ci(c)}"></span>cluster C${c}` : ''}${a.model ? ' · <b>one of the 27 model papers</b>' : ''}${G.D.cited_by[i] != null ? ` · cited by ${G.D.cited_by[i]} (OpenAlex)` : ''}${doi ? ` · <a href="https://doi.org/${G.esc(doi)}" target="_blank" rel="noopener">DOI</a>` : ''}</p>` + (abs ? `<details style="margin-top:6px"><summary>Show abstract</summary><p class="abs">${G.esc(abs)}</p></details>` : (G.hasExtra ? '' : '<p class="help">abstract loading…</p>'));
+    $('info').innerHTML = `<h4>Paper inspector</h4><p style="margin:4px 0"><b>#${a.id}</b> ${G.esc(a.title)}</p><p class="help" style="margin:0">${G.esc(a.authors)} · ${a.year ?? 'year n/a'}${R ? ` · <span class="sw" style="background:${ci(c)}"></span>cluster C${c}` : ''}${a.model ? ' · <b>one of the 27 model papers</b>' : ''}${G.D.cited_by[i] != null ? ` · cited by ${G.D.cited_by[i]} (OpenAlex)` : ''}${doi ? ` · <a href="https://doi.org/${G.esc(doi)}" target="_blank" rel="noopener">DOI</a>` : ''}</p>` + (a.retained === false ? `<p class="warn" style="margin:4px 0">Excluded from the main analysis (square marker): ${G.esc(a.reason || '')}</p>` : '') + (abs ? `<details style="margin-top:6px"><summary>Show abstract</summary><p class="abs">${G.esc(abs)}</p></details>` : (G.hasExtra ? '' : '<p class="help">abstract loading…</p>'));
   }
   P.select = select;
 
@@ -154,9 +155,9 @@
         const c = document.createElement('button'), on = st.ticks.has(m.key), add = st.w[m.key] - 1;
         c.type = 'button'; c.setAttribute('aria-pressed', String(on));
         c.className = 'chip' + (on ? ' on' : ''); c.textContent = m.label;
-        if (on && add > 0) { const s = document.createElement('sup'); s.textContent = '+' + +add.toFixed(2); c.appendChild(s); }
+        if (on && Math.abs(add) > 1e-9) { const s = document.createElement('sup'); s.textContent = (add > 0 ? '+' : '−') + Math.abs(+add.toFixed(2)); c.appendChild(s); }
         c.title = (m.binary ? '0/1 feature, n = ' + (G.prev[m.key] ?? '') : 'number') + ' - click to ' + (on ? 'remove' : 'add');
-        c.onclick = e => { if (st.wmode && on) { st.w[m.key] = Math.max(1, st.w[m.key] + (e.shiftKey ? -1 : 1)); G.emit('state'); } else G.toggle(m.key); };
+        c.onclick = e => { if (st.wmode && on) { const step = st.wstep || 1; st.w[m.key] = Math.max(0.05, +(st.w[m.key] + (e.shiftKey ? -step : step)).toFixed(3)); G.emit('state'); } else G.toggle(m.key); };
         div.appendChild(c);
       });
       box.appendChild(div);
@@ -190,7 +191,7 @@
     if (cur) { G.lazyPlot('pca', () => drawMap(cur.R, cur.lab)); G.lazyPlot('dend', () => drawDend(cur.R, cur.lab)); }
   };
   P.setup = function () {
-    const st = G.st; G.on('extra', () => { if (st.sel != null) select(st.sel); });
+    const st = G.st; G.on('papers', () => { if (st.sel == null) $('info').innerHTML = '<h4>Paper inspector</h4><p class="help">Click a paper in either plot to inspect it.</p>'; }); G.on('extra', () => { if (st.sel != null) select(st.sel); });
     $('k').innerHTML = Array.from({ length: 11 }, (_, i) => `<option>${i + 2}</option>`).join('');
 
     $('auto').onchange = e => { st.auto = e.target.checked; G.emit('state'); };
@@ -200,6 +201,8 @@
     $('topn').onchange = e => { st.topn = +e.target.value; G.emit('view'); };
     $('d3').onchange = e => { st.d3 = e.target.checked; G.emit('view'); };
     $('wmode').onchange = e => { st.wmode = e.target.checked; };
+    $('wstep').onchange = e => { st.wstep = +e.target.value; };
+    $('nums').onchange = e => { st.nums = e.target.checked; G.emit('state'); };
     $('pcsel').onchange = e => { $('pcsel').dataset.v = e.target.value; const c = G.cur(); if (c) drawLoadings(c.R); };
     $('rw').onclick = e => { e.preventDefault(); G.D.columns.forEach(c => st.w[c] = 1); G.emit('state'); };
     $('r20').onclick = e => { e.preventDefault(); st.ticks = new Set(G.D.default20.filter(f => !G.excluded.has(f))); st.scope = 'all'; G.emit('scope'); G.emit('state'); };

@@ -12,7 +12,7 @@
     nodes = [...deg.keys()].sort((a, b) => deg.get(b) - deg.get(a) || a - b);
     focus = nodes[0];
     $('cfocus').innerHTML = nodes.map(i => `<option value="${i}">#${G.D.articles[i].id} (${deg.get(i)} links) ${G.esc(G.D.articles[i].title.slice(0, 60))}</option>`).join('');
-    $('cstatus').textContent = `${E.length} citation links among ${nodes.length} of the ${G.n} retained articles (source: OpenAlex reference lists, cached by the R pipeline).`;
+    $('cstatus').textContent = `${E.length} citation links among ${nodes.length} of the ${G.n} papers (source: OpenAlex reference lists, cached by the R pipeline).`;
   }
 
   // Fruchterman-Reingold layout with weak gravity (keeps disconnected pieces near the centre), deterministic
@@ -70,6 +70,7 @@
     // edge table
     $('cedges').innerHTML = `<table class="t"><tr><th>Citing</th><th>Cluster</th><th>Cited</th><th>Cluster</th></tr>${V.edges.map(([x, y]) => `<tr><td>#${G.D.articles[x].id} ${G.esc(G.D.articles[x].title.slice(0, 90))}</td><td>C${lab[x]}</td><td>#${G.D.articles[y].id} ${G.esc(G.D.articles[y].title.slice(0, 90))}</td><td>C${lab[y]}</td></tr>`).join('')}</table>`;
   };
+  CI.reset = function () { prepare(); if ($('tab-cite').classList.contains('on')) CI.render(); };
   CI.setup = function () {
     prepare();
     $('cfocus').onchange = e => { focus = +e.target.value; document.querySelector('input[name=cscope][value=focus]').checked = true; G.measureUpdate(CI.render); };

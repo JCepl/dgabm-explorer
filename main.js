@@ -20,10 +20,12 @@
       if (dirty.has(cur)) { dirty.delete(cur); G.measureUpdate(() => mods[cur].render()); }
     });
   });
+  G.$('inclx-n').textContent = G.D.n_all - G.D.n; G.$('inclx').onchange = e => G.setIncludeExcluded(e.target.checked);
   G.on('view', () => { if (cur === 'pca') G.measureUpdate(() => G.pca.renderView()); else dirty.add('pca'); });
   document.querySelectorAll('nav a[data-tab]').forEach(a => a.onclick = () => show(a.dataset.tab));
   const start = (location.hash || '#pca').slice(1); show(mods[start] ? start : 'pca');
-  G.$('foot').textContent = `Data exported ${G.D.generated} from the R pipeline · ${G.n} articles · all analysis runs in your browser (PCA, Ward clustering and silhouettes agree with R to ~1e-12).`;
+  const setFoot = () => { G.$('foot').textContent = `Data exported ${G.D.generated} from the R pipeline · ${G.n} articles${G.st.includeExcluded ? ' (including the excluded papers)' : ''} · all analysis runs in your browser (PCA, Ward clustering and silhouettes agree with R to ~1e-12).`; };
+  setFoot(); G.on('papers', setFoot);
   G.$('boot').remove();
   (window.requestIdleCallback || (f => setTimeout(f, 600)))(() => G.extra());   // raw workbook etc. in the background
   window.__G = G;

@@ -4,7 +4,7 @@
   G.$ = id => document.getElementById(id);
   const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
   G.PAL = ['#0072B2', '#D55E00', '#6A3D9A', '#E31A1C', '#009E73', '#E69F00', '#8C510A', '#56B4E9', '#CC79A7', '#4D4D4D', '#117733', '#882255'];
-  G.GCOL = { interaction: '#0072B2', traits: '#009E73', genetics: '#6A3D9A', management: '#B8860B', outputs: '#C0392B', continuous: '#546E7A' };
+  G.GCOL = { interaction: '#0072B2', traits: '#009E73', genetics: '#6A3D9A', management: '#B8860B', outputs: '#C0392B', continuous: '#546E7A', system: '#00838F', eef: '#AD1457' };
   G.esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   G.on = (ev, fn) => (G.handlers[ev] = G.handlers[ev] || []).push(fn);
   G.emit = ev => (G.handlers[ev] || []).forEach(fn => fn());
@@ -27,7 +27,7 @@
     Plotly.__patched = Plotly.react;
   };
   G.need3d = () => G.p3d || (G.p3d = G.loadScript('vendor/plotly.min.js').then(() => { G.has3d = true; G.patchPlotly(); }));
-  G.extra = () => G.px || (G.px = Promise.resolve(window.DGABM_DATA.extra).then(x => { Object.assign(G.D, x); G.hasExtra = true; G.emit('extra'); }));
+  G.extra = () => G.px || (G.px = Promise.resolve(window.DGABM_DATA.extra).then(x => { G.fullExtra = { raw: x.raw, doi: x.doi }; Object.assign(G.D, x); G.hasExtra = true; G.sliceExtra(); G.emit('extra'); }));
   // Lower-page charts only render when they are near the viewport.
   const deferredPlots = new Map();
   const plotObserver = new IntersectionObserver(entries => {
@@ -64,6 +64,17 @@
   };
   G.ew = f => G.st.w[f] * G.st.cw[G.F[f].group];          // effective weight = feature weight x category weight
 
+  G.computePrev = () => { const D = G.D; G.prev = Object.fromEntries(G.binKeys.map(k => [k, D.X.reduce((s, r) => s + r[G.col.get(k)], 0)])); G.varied = Object.fromEntries(D.columns.map((f, j) => [f, D.X.some(row => row[j] !== D.X[0][j])])); };
+  G.sliceExtra = () => { if (!G.fullExtra) return; G.D.raw = G.fullExtra.raw.slice(0, G.n); G.D.doi = G.fullExtra.doi.slice(0, G.n); };
+  // switch the active paper set: the retained papers (default) or all papers including the excluded ones
+  G.applyPapers = include => {
+    const D = G.D, F = G.full, n = include ? D.n_all : D.n; G.n = n; G.st.includeExcluded = !!include;
+    D.X = F.X.slice(0, n); D.articles = F.articles.slice(0, n); D.edges = F.edges.filter(e => e[0] <= n && e[1] <= n); D.cited_by = F.cited_by.slice(0, n);
+    if (G.st.sel != null && G.st.sel >= n) G.st.sel = null;
+    G.sliceExtra(); G.computePrev(); G.st.cache.clear();
+  };
+  G.setIncludeExcluded = include => { G.applyPapers(include); if (G.fm && G.fm.reset) G.fm.reset(); if (G.cite && G.cite.reset) G.cite.reset(); G.emit('papers'); G.emit('state'); };
+
   G.init = async function () {
     G.patchPlotly();
     const D = G.D = window.DGABM_DATA.core;
@@ -71,10 +82,15 @@
     G.preset = window.DGABM_PRESET;
     G.excluded = new Set(G.preset?.excludedFeatures || []);
     G.recommendedFeatures = [...(D[G.preset?.featureSet] || D.startup), ...(G.preset?.includeOutputs ? D.features.filter(f => f.group === 'outputs').map(f => f.key) : [])].filter(f => !G.excluded.has(f));
+    // All papers are loaded; D.X, D.articles, D.edges, D.cited_by (and later D.raw, D.doi) are the ACTIVE view: the first D.n papers (the retained ones),
+    // or all D.n_all when "Include the excluded papers" is on. See G.applyPapers().
+    G.full = { X: D.X, articles: D.articles, edges: D.edges, cited_by: D.cited_by };
     G.n = D.n; G.col = new Map(D.columns.map((c, i) => [c, i])); G.F = Object.fromEntries(D.features.map(f => [f.key, f]));
-    G.binKeys = D.features.filter(f => f.group !== 'continuous' && f.binary).map(f => f.key);       // the 47 candidate 0/1 features, in group order
+    G.binKeys = D.features.filter(f => f.group !== 'continuous' && f.binary).map(f => f.key);       // all 0/1 features (candidates + optional groups), in group order
     G.prev = Object.fromEntries(G.binKeys.map(k => [k, D.X.reduce((s, r) => s + r[G.col.get(k)], 0)]));
     G.st = { scope: 'all', ticks: new Set(G.recommendedFeatures), w: Object.fromEntries(D.columns.map(c => [c, 1])), cw: Object.fromEntries(D.group_order.map(g => [g, 1])), k: G.preset?.k || 7, auto: !G.preset, sel: null, cache: new Map(), load: true, topn: 7, mark: true, d3: false, wmode: false };
+    G.st.includeExcluded = false;
+    G.applyPapers(false);   // the page starts on the retained papers only: slice the full arrays down
     G.inScope = () => D.columns.filter(f => !G.excluded.has(f));
     G.isRecommended = () => G.st.k === G.preset?.k && G.compute().feats.length === G.recommendedFeatures.length && G.compute().feats.every(f => G.recommendedFeatures.includes(f) && G.ew(f) === 1);
   };

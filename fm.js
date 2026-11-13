@@ -39,32 +39,44 @@
   }
   // generic heatmap: keys (ordered), Z (values), optional tree {merges, order}
   function heat(el, keys, Z, o) {
-    const m = keys.length, text = keys.map((a, i) => keys.map((b, j) => o.hover(i, j)));
-    const lbls = keys.map(k => `<span style="color:${G.GCOL[G.F[k].group]}">${G.esc(lab(k).length > 24 ? lab(k).slice(0, 22) + '…' : lab(k))}</span>`);
-    const tr = [{ type: 'heatmap', x: keys.map((_, i) => i), y: keys.map((_, i) => i), z: Z, text, hoverinfo: 'text', colorscale: o.scale, zmin: o.zmin, zmax: o.zmax, xaxis: 'x', yaxis: 'y', xgap: 0, ygap: 0, colorbar: { orientation: 'h', x: 1, xanchor: 'right', y: 1.0, yanchor: 'bottom', len: 0.3, thickness: 10, title: { text: o.cbar, side: 'top' } } }];
-    // A fixed cell size keeps the matrix square and its numbers readable.
-    const side=Math.ceil(m*32/(o.tree ? .88 : 1)+220),dom=o.tree?{x:[.12,1],y:[0,.88]}:{x:[0,1],y:[0,1]};
-    $(el).style.width=side+'px';$(el).style.height=side+'px';
-    const xs=[],ys=[],numbers=[],colours=[];
-    Z.forEach((row,i)=>row.forEach((v,j)=>{
-      if(v==null||!Number.isFinite(v))return;
-      xs.push(j);ys.push(i);numbers.push(o.format?o.format(v):String(v));
-      const scale=Math.max(0,Math.min(1,(v-o.zmin)/(o.zmax-o.zmin)));
-      colours.push(o.zmin<0?(scale<.22||scale>.78?'#fff':'#263238'):(scale>.55?'#fff':'#263238'));
-    }));
-    tr.push({type:'scatter',mode:'text',x:xs,y:ys,text:numbers,textfont:{size:9,color:colours},hoverinfo:'skip',showlegend:false});
-    const lay = {width:side,height:side,autosize:false,margin:{l:o.tree?20:190,r:o.tree?190:20,t:20,b:190},paper_bgcolor:'#fff',plot_bgcolor:'#fff',font:{size:10,color:G.font()},
-      xaxis:{domain:dom.x,tickmode:'array',tickvals:keys.map((_,i)=>i),ticktext:lbls,tickangle:90,range:[-.5,m-.5],showgrid:false,zeroline:false,automargin:false,constrain:'domain'},
-      yaxis:{domain:dom.y,tickmode:'array',tickvals:keys.map((_,i)=>i),ticktext:lbls,range:[m-.5,-.5],showgrid:false,zeroline:false,side:o.tree?'right':'left',automargin:false,scaleanchor:'x',scaleratio:1,constrain:'domain'},shapes:[],showlegend:false};
-    if (o.bounds) o.bounds.forEach(b => { lay.shapes.push({ type: 'line', x0: b - 0.5, x1: b - 0.5, y0: -0.5, y1: m - 0.5, line: { color: '#fff', width: 3 } }, { type: 'line', y0: b - 0.5, y1: b - 0.5, x0: -0.5, x1: m - 0.5, line: { color: '#fff', width: 3 } }); });
-    if (o.tree) {
-      const pos = new Map(o.tree.order.map((l, i) => [l, i])), d = dendLines(o.tree.merges, m, pos);
+    // Pixel plan (no scaleanchor/constrain: they squeezed the matrix and let the dendrograms drift away from their cells).
+    // Without tree:  [names][matrix]            names left + bottom
+    // With tree:     [dendrogram][names][matrix][names]  and, vertically, [dendrogram][names][matrix][names]
+    const m = keys.length, cell = G.cell || 14, tree = !!o.tree, heatPx = m * cell, DEND = 90, LABW = 170, clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const short = k => { const t = lab(k); return t.length > 26 ? t.slice(0, 24) + '…' : t; };
+    const lbls = keys.map(k => `<span style="color:${G.GCOL[G.F[k].group]}">${G.esc(short(k))}</span>`);
+    const tickSize = clamp(Math.round(cell * .72), 5, 10), numSize = clamp(Math.round(cell * .34), 6, 12);
+    const text = keys.map((a, i) => keys.map((b, j) => o.hover(i, j)));
+    const mg = tree ? { l: 10, r: 190, t: 70, b: 190, autoexpand: false } : { l: 190, r: 20, t: 70, b: 190, autoexpand: false };   // fixed margins: nothing may squeeze the plot area
+    const PW = tree ? DEND + LABW + heatPx : heatPx, PH = tree ? DEND + LABW + heatPx : heatPx;      // plot area in px
+    const W = PW + mg.l + mg.r, H = PH + mg.t + mg.b;
+    const hx = tree ? [(DEND + LABW) / PW, 1] : [0, 1], hy = tree ? [0, heatPx / PH] : [0, 1];
+    $(el).style.width = W + 'px'; $(el).style.height = H + 'px';
+    const idx = keys.map((_, i) => i), rng = [-.5, m - .5];
+    const tr = [{ type: 'heatmap', x: idx, y: idx, z: Z, text, hoverinfo: 'text', colorscale: o.scale, zmin: o.zmin, zmax: o.zmax, xaxis: 'x', yaxis: 'y', xgap: 0, ygap: 0,
+      colorbar: { orientation: 'h', x: 1, xanchor: 'right', y: 1.0, yanchor: 'bottom', len: 0.3, thickness: 10, title: { text: o.cbar, side: 'top' } } }];
+    if (cell >= 20) {
+      const xs = [], ys = [], numbers = [], colours = [];
+      Z.forEach((row, i) => row.forEach((v, j) => { if (v == null || !Number.isFinite(v)) return; xs.push(j); ys.push(i); numbers.push(o.format ? o.format(v) : String(v));
+        const sc = Math.max(0, Math.min(1, (v - o.zmin) / (o.zmax - o.zmin))); colours.push(o.zmin < 0 ? (sc < .22 || sc > .78 ? '#fff' : '#263238') : (sc > .55 ? '#fff' : '#263238')); }));
+      tr.push({ type: 'scatter', mode: 'text', x: xs, y: ys, text: numbers, textfont: { size: numSize, color: colours }, hoverinfo: 'skip', showlegend: false });
+    }
+    const ticks = side => ({ tickmode: 'array', tickvals: idx, ticktext: lbls, tickfont: { size: tickSize }, showgrid: false, zeroline: false, automargin: false, range: rng });
+    const lay = { width: W, height: H, autosize: false, margin: mg, paper_bgcolor: '#fff', plot_bgcolor: '#fff', font: { size: 10, color: G.font() }, shapes: [], showlegend: false,
+      xaxis: Object.assign(ticks(), { domain: hx, tickangle: 90 }),
+      yaxis: Object.assign(ticks(), { domain: hy, range: [m - .5, -.5], side: tree ? 'right' : 'left' }) };
+    if (o.bounds) o.bounds.forEach(b => lay.shapes.push({ type: 'line', x0: b - .5, x1: b - .5, y0: -.5, y1: m - .5, line: { color: '#fff', width: 3 } }, { type: 'line', y0: b - .5, y1: b - .5, x0: -.5, x1: m - .5, line: { color: '#fff', width: 3 } }));
+    if (tree) {
+      const pos = new Map(o.tree.order.map((l, i) => [l, i])), d = dendLines(o.tree.merges, m, pos), top = [(heatPx + LABW) / PH, 1];
       tr.push({ type: 'scatter', mode: 'lines', x: d.X, y: d.Y, xaxis: 'x2', yaxis: 'y2', line: { color: '#37474F', width: 1 }, hoverinfo: 'skip' });
       tr.push({ type: 'scatter', mode: 'lines', x: d.Y, y: d.X, xaxis: 'x3', yaxis: 'y3', line: { color: '#37474F', width: 1 }, hoverinfo: 'skip' });
-      lay.xaxis2 = { domain: dom.x, range: [-0.5, m - 0.5], visible: false, anchor: 'y2' }; lay.yaxis2 = { domain: [0.90, 1], range: [0, d.hmax * 1.02], visible: false, anchor: 'x2' };
-      lay.xaxis3 = { domain: [0, 0.10], range: [d.hmax * 1.02, 0], visible: false, anchor: 'y3' }; lay.yaxis3 = { domain: dom.y, range: [m - 0.5, -0.5], visible: false, anchor: 'x3' };
+      // the names also on the dendrogram sides (left and top), on overlay axes that share the matrix' own coordinates
+      tr.push({ type: 'scatter', mode: 'markers', x: [0], y: [0], xaxis: 'x4', yaxis: 'y4', marker: { opacity: 0 }, hoverinfo: 'skip', showlegend: false });
+      lay.xaxis2 = { domain: hx, range: rng, visible: false, anchor: 'y2' }; lay.yaxis2 = { domain: top, range: [0, d.hmax * 1.02], visible: false, anchor: 'x2' };
+      lay.xaxis3 = { domain: [0, DEND / PW], range: [d.hmax * 1.02, 0], visible: false, anchor: 'y3' }; lay.yaxis3 = { domain: hy, range: [m - .5, -.5], visible: false, anchor: 'x3' };
+      lay.xaxis4 = Object.assign(ticks(), { overlaying: 'x', side: 'top', anchor: 'y', tickangle: -90 }); lay.yaxis4 = Object.assign(ticks(), { overlaying: 'y', side: 'left', anchor: 'x', range: [m - .5, -.5] });
     }
-    Plotly.react(el, tr, lay, { displaylogo: false, responsive: false, modeBarButtonsToRemove: ['select2d', 'lasso2d'] });
+    Plotly.react(el, tr, lay, { displaylogo: false, responsive: false, scrollZoom: false, modeBarButtonsToRemove: ['select2d', 'lasso2d'] });
     const div = $(el); if (div.removeAllListeners) div.removeAllListeners('plotly_click');
     div.on('plotly_click', e => { const p = e.points.find(x => (x.data.type === 'heatmap' || x.data.mode === 'text')); if (!p) return; openCross(keys[Math.round(p.y)], keys[Math.round(p.x)]); });
   }
@@ -100,13 +112,17 @@
     const ix = tree.order, keys = ix.map(i => K[i]), Z = ix.map(a => ix.map(b => (skipDiag && a === b) ? null : values[a][b]));
     heat('resc', keys, Z, { scale, zmin, zmax, cbar, tree, format: v => method==='share'?Math.round(100*v)+'%':v.toFixed(2), hover: (i, j) => hoverCount(keys, (x, y) => (ix[x] === ix[y] && skipDiag) ? 'diagonal' : 'rescaled: ' + shown(values[ix[x]][ix[y]]))(i, j) });
   }
-  function traitCorr() {
-    const keys=K.filter(k=>G.F[k].group==='traits');
-    const Z=keys.map(a=>keys.map(b=>{
-      const i=K.indexOf(a),j=K.indexOf(b),pa=own[i]/G.n,pb=own[j]/G.n,den=Math.sqrt(pa*(1-pa)*pb*(1-pb));
-      return den?(counts[i][j]/G.n-pa*pb)/den:null;
-    }));
-    heat('traitcorr',keys,Z,{scale:DIV,zmin:-1,zmax:1,cbar:'Pearson r (phi)',format:v=>Math.abs(v)<.005?'0.00':v.toFixed(2),hover:(i,j)=>`<b>${G.esc(lab(keys[i]))}</b> × <b>${G.esc(lab(keys[j]))}</b><br>r = ${Z[i][j]?.toFixed(3)??'undefined (constant feature)'}<br>n = ${G.n}`});
+  function corrTab() {
+    const D = G.D, n = G.n, groups = [...document.querySelectorAll('#corr-groups input:checked')].map(i => i.value);
+    const vars = D.features.filter(f => groups.includes(f.group)).map(f => { const c = G.col.get(f.key), v = D.X.map(r => r[c]), m = G.mean(v), sd = Math.sqrt(v.reduce((q, x) => q + (x - m) ** 2, 0) / (n - 1)); return { k: f.key, z: sd > 0 ? v.map(x => (x - m) / sd) : null }; }).filter(x => x.z);
+    const m = vars.length; G.lastCorrN = m; if (m < 2) { $('traitcorr').innerHTML = '<p class="help" style="padding:20px">Tick at least two groups of variables.</p>'; return; }
+    const R = vars.map(a => vars.map(b => { let d = 0; for (let t = 0; t < n; t++) d += a.z[t] * b.z[t]; return d / (n - 1); }));
+    const clustered = document.querySelector('input[name=corder]:checked').value === 'cluster', absD = document.querySelector('input[name=cdist]:checked').value === 'abs';
+    let order = vars.map((_, i) => i), tree;
+    if (clustered) { const Dm = new Float64Array(m * m); for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) Dm[i * m + j] = i === j ? 0 : Math.max(0, 1 - (absD ? Math.abs(R[i][j]) : R[i][j])); const merges = G.C.upgma(Dm, m); order = G.C.leafOrder(merges, m); tree = { merges, order }; }
+    const keys = order.map(i => vars[i].k), Z = order.map(a => order.map(b => R[a][b]));
+    heat('traitcorr', keys, Z, { scale: DIV, zmin: -1, zmax: 1, cbar: 'Pearson r', tree, format: v => Math.abs(v) < .005 ? '0.00' : v.toFixed(2),
+      hover: (i, j) => `<b>${G.esc(lab(keys[i]))}</b> × <b>${G.esc(lab(keys[j]))}</b><br>r = ${Z[i][j].toFixed(3)}${keys[i] === keys[j] ? ' (diagonal)' : ''}<br><i>click: cross these two features (0/1 features only)</i>` });
   }
   function euclidRows(R) { const m = R.length, D = new Float64Array(m * m); for (let i = 0; i < m; i++) for (let j = i + 1; j < m; j++) { let s = 0; for (let k = 0; k < R[i].length; k++) s += (R[i][k] - R[j][k]) ** 2; D[i * m + j] = D[j * m + i] = Math.sqrt(s); } return D; }
   function treeFromD(D) { const merges = G.C.upgma(D, nF); return { merges, order: G.C.leafOrder(merges, nF) }; }
@@ -128,7 +144,7 @@
     const both = ids[1][1]; html += `<details style="margin-top:8px"><summary>Articles with both (${both.length})</summary><p class="help">${both.map(i => `#${G.D.articles[i].id} ${G.esc(G.D.articles[i].title.slice(0, 80))}`).join('<br>') || 'none'}</p></details>`;
     $('crossout').innerHTML = html;
   }
-  function openCross(a, b) { $('fa').value = a; $('fb').value = b; cross(); const d = $('crossbox'); d.open = true; }
+  function openCross(a, b) { if (K.indexOf(a) < 0 || K.indexOf(b) < 0) return; $('fa').value = a; $('fb').value = b; cross(); const d = $('crossbox'); d.open = true; }
 
   // ------------------------------------------------------------- wiring
   FM.render = function () {
@@ -137,11 +153,29 @@
       if (!built[1]) { table(); built[1] = true; }
       else $('fmtable').querySelectorAll('input[data-k]').forEach(input => input.checked = G.st.ticks.has(input.dataset.k));
     }
-    else if (!built[sub]) { ({ 2: cooc, 3: clus, 4: resc, 5: traitCorr })[sub](); built[sub] = true; }
+    else if (!built[sub]) { ({ 2: cooc, 3: clus, 4: resc, 5: corrTab })[sub](); built[sub] = true; }
   };
+  // zoom: cell size in pixels (default small); numbers appear from 20 px
+  FM.setCell = function (v, keepScroll) {
+    G.cell = Math.max(6, Math.min(44, Math.round(v))); $('zm').value = G.cell; $('zval').textContent = G.cell + ' px per cell' + (G.cell >= 20 ? ' (numbers shown)' : '');
+    built = { 1: built[1] }; FM.render(); window.dispatchEvent(new Event('resize'));
+  };
+  FM.fit = function () {
+    const box = document.querySelector('.sub.on .matrix-scroll'); if (!box) return; const sb = +sub, m = sb === 5 ? (G.lastCorrN || 57) : K.length;
+    const tree = sb === 3 || sb === 4 || (sb === 5 && document.querySelector('input[name=corder]:checked').value === 'cluster');
+    FM.setCell(Math.floor((box.clientWidth - 210) * (tree ? .88 : 1) / m));
+  };
+  // the paper set changed (Include the excluded papers): rebuild the 0/1 matrix and counts, redraw the visible view
+  FM.reset = function () { const a = $('fa').value, b = $('fb').value; built = {}; prepare(); if (K.includes(a)) $('fa').value = a; if (K.includes(b)) $('fb').value = b; cross(); if ($('tab-fm').classList.contains('on')) FM.render(); };
   FM.setup = function () {
-    prepare();
-    $('fmtabs').querySelectorAll('button').forEach(b => b.onclick = () => { sub = b.dataset.s; $('fmtabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('.sub').forEach(s => s.classList.toggle('on', s.id === 'fm' + sub)); G.measureUpdate(FM.render); window.dispatchEvent(new Event('resize')); });
+    prepare(); G.cell = G.cell || 14;
+    $('corr-groups').innerHTML = G.D.group_order.map(g => `<label><input type="checkbox" value="${g}" checked> ${G.esc(G.D.group_titles[g])}</label>`).join('');
+    $('corr-groups').querySelectorAll('input').forEach(i => i.onchange = () => { built[5] = false; FM.render(); });
+    document.querySelectorAll('input[name=corder],input[name=cdist]').forEach(r => r.onchange = () => { built[5] = false; FM.render(); });
+    $('zm').value = G.cell; $('zval').textContent = G.cell + ' px per cell';
+    $('zm').oninput = () => FM.setCell(+$('zm').value); $('zm-').onclick = () => FM.setCell(G.cell * 0.85); $('zm+').onclick = () => FM.setCell(G.cell * 1.18); $('zfit').onclick = FM.fit;
+    document.querySelectorAll('#tab-fm .matrix-scroll').forEach(b => b.addEventListener('wheel', e => { if (e.ctrlKey || e.metaKey) { e.preventDefault(); FM.setCell(G.cell * (e.deltaY < 0 ? 1.12 : 0.9)); } }, { passive: false }));
+    $('fmtabs').querySelectorAll('button').forEach(b => b.onclick = () => { sub = b.dataset.s; $('zoombar').style.display = +sub >= 2 ? '' : 'none'; $('fmtabs').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); document.querySelectorAll('.sub').forEach(s => s.classList.toggle('on', s.id === 'fm' + sub)); G.measureUpdate(FM.render); window.dispatchEvent(new Event('resize')); });
     document.querySelectorAll('input[name=resc]').forEach(r => r.onchange = () => { built[4] = false; G.measureUpdate(FM.render); window.dispatchEvent(new Event('resize')); });
     $('fa').onchange = $('fb').onchange = cross; $('fm-dl-all').onclick = () => dl(false); $('fm-dl-tick').onclick = () => dl(true); cross();
   };

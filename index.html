@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=9344c86b30d2"></head><body class="locked">
+<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=626b301597d0"></head><body class="locked">
 <nav>
-  <span class="brand">DG-ABM article explorer</span>
+  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.1 ✓</span>
   <a data-tab="pca" class="on">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data dictionary</a>
   <span class="sp"></span><button class="btn" onclick="location.reload()">Lock</button>
   <details class="download-menu" id="download-menu"><summary>Download</summary><div class="download-panel">
@@ -32,6 +32,8 @@
       <label>Clusters k <select id="k"></select></label>
       <label><input type="checkbox" id="auto" checked> Auto k</label>
       <label><input type="checkbox" id="mark" checked> Mark model papers</label>
+      <label><input type="checkbox" id="nums" checked> Numbers</label>
+      <label title="Adds the papers the reviewers excluded (square markers). Everything is recomputed."><input type="checkbox" id="inclx"> Include <span id="inclx-n">8</span> excluded papers</label>
       <label><input type="checkbox" id="load" checked> Loadings</label>
       <label id="topw">top <select id="topn"><option>3</option><option>5</option><option selected>7</option><option>10</option><option>15</option></select></label>
       <label><input type="checkbox" id="d3"> 3D</label>
@@ -43,7 +45,7 @@
     <h4>Features used</h4>
     <p class="help">Click a feature to include it. <a href="#" id="recommended">Overall view</a> · <a href="#" id="r20">Binary 19</a> · <a href="#" id="rst">Legacy start</a> · <a href="#" id="rw">Reset weights</a>.</p>
     <div class="notes" id="featnote"></div>
-    <div class="wmode"><label><input type="checkbox" id="wmode"> Weight mode: click +1; shift-click −1.</label></div>
+    <div class="wmode"><label><input type="checkbox" id="wmode"> Weight mode: click +step, shift-click −step</label> <label>step <select id="wstep"><option value="1">1</option><option value="0.5">0.5</option><option value="0.25">0.25</option><option value="0.1">0.1</option><option value="0.05">0.05</option></select></label></div>
     <div class="chipgrid" id="chips"></div>
 </aside>
     <div class="pca-stage">
@@ -56,8 +58,8 @@
       </div>
       <div id="view-map" class="workspace-view on" role="tabpanel">
         <div class="map-grid">
-          <div class="plot-card"><h4>PCA map</h4><p class="panel-help">Hover or click a paper. Gold rings mark model papers. <span id="map-variance"></span></p><div class="panel" id="pca"></div></div>
-          <div class="plot-card"><h4>Hierarchy</h4><p class="panel-help">Click a fork to choose k; click a leaf to inspect a paper.</p><svg id="dend"></svg><div class="split" id="fork">Click a fork circle.</div></div>
+          <div class="plot-card"><h4 class="card-title">PCA map <button type="button" class="expand-btn" data-expand title="Enlarge to a full window (Esc closes)">⤢ Enlarge</button></h4><p class="panel-help">Hover or click a paper. Gold rings mark model papers. <span id="map-variance"></span></p><div class="panel" id="pca"></div></div>
+          <div class="plot-card"><h4 class="card-title">Hierarchy <button type="button" class="expand-btn" data-expand title="Enlarge to a full window (Esc closes)">⤢ Enlarge</button></h4><p class="panel-help">Click a fork to choose k; click a leaf to inspect a paper.</p><svg id="dend"></svg><div class="split" id="fork">Click a fork circle.</div></div>
         </div>
         <div class="card" id="info"><h4>Paper inspector</h4><p class="help">Click a paper in either plot to inspect it.</p></div>
       </div>
@@ -81,15 +83,20 @@
 </section>
 
 <section id="tab-fm" class="tab">
-  <p class="help">Explore all 47 binary features, plus correlations among traits. Hover over any heatmap cell to see the feature combination; click a cell to open 'Cross two features' below with that pair filled in.</p>
-  <div class="subtabs" id="fmtabs"><button data-s="1" class="on">1 · Article x feature table</button><button data-s="2">2 · Co-occurrence matrix</button><button data-s="3">3 · Clustered co-occurrence</button><button data-s="4">4 · Rescaled clustering</button><button data-s="5">5 · Trait correlations</button></div>
+  <p class="help">Explore all binary features, plus correlations among all variables. Hover over any heatmap cell to see the feature combination; click a cell to open 'Cross two features' below with that pair filled in.</p>
+  <div class="subtabs" id="fmtabs"><button data-s="1" class="on">1 · Article x feature table</button><button data-s="2">2 · Co-occurrence matrix</button><button data-s="3">3 · Clustered co-occurrence</button><button data-s="4">4 · Rescaled clustering</button><button data-s="5">5 · Variable correlations</button></div>
+  <div class="zoombar" id="zoombar" style="display:none"><b>Zoom</b> <button type="button" class="btn" id="zm-" title="smaller cells">−</button><input type="range" id="zm" min="6" max="44" step="1" value="14"><button type="button" class="btn" id="zm+" title="larger cells">+</button><button type="button" class="btn" id="zfit" title="fit the matrix to the window width">Fit</button><span class="help" id="zval"></span><span class="help">Numbers appear when the cells are large enough. Ctrl/⌘ + mouse wheel also zooms; drag to pan.</span></div>
   <div class="sub on" id="fm1"><p class="help" id="fm1note"></p><div class="row" style="margin-bottom:8px"><button class="btn" id="fm-dl-all">Download full matrix (CSV)</button><button class="btn" id="fm-dl-tick">Download ticked features only</button></div><div class="scroll" style="max-height:72vh" id="fmtable"></div></div>
   <div class="sub" id="fm2"><div class="card"><h4>Co-occurrence matrix</h4><p class="help">How often each pair of features appears together in the same article (raw counts, not a correlation). The diagonal is a feature's own n. Darker = more articles have both. Features keep the grouping of the table above; group boundaries are white lines.</p></div><div class="matrix-scroll"><div id="cooc" class="panel matrix-plot"></div></div></div>
-  <div class="sub" id="fm3"><div class="card"><h4>Feature clustering (co-occurrence-based)</h4><p class="help">Clusters the 47 FEATURES by how similar their co-occurrence pattern is (Jaccard distance, average linkage) - not the PCA, which clusters the papers. The dendrogram sits on the left and top edge of the heatmap it orders. A very short branch usually means two near-duplicate features.</p></div><div class="matrix-scroll"><div id="clus" class="panel matrix-plot"></div></div></div>
+  <div class="sub" id="fm3"><div class="card"><h4>Feature clustering (co-occurrence-based)</h4><p class="help">Clusters the binary FEATURES by how similar their co-occurrence pattern is (Jaccard distance, average linkage) - not the PCA, which clusters the papers. The dendrogram sits on the left and top edge of the heatmap it orders. A very short branch usually means two near-duplicate features.</p></div><div class="matrix-scroll"><div id="clus" class="panel matrix-plot"></div></div></div>
   <div class="sub" id="fm4"><div class="card"><h4>Feature clustering, rescaled (rare features weighted equally)</h4><p class="help">Raw counts let common features dominate. Choose a rescaling:</p>
     <label><input type="radio" name="resc" value="share" checked> Share of the row feature's articles (%)</label> &nbsp; <label><input type="radio" name="resc" value="phi"> Phi correlation (x100)</label> &nbsp; <label><input type="radio" name="resc" value="lift"> Lift: log2(observed / expected)</label>
     <p class="help" id="rescnote" style="margin-top:8px"></p></div><div class="matrix-scroll"><div id="resc" class="panel matrix-plot"></div></div></div>
-  <div class="sub" id="fm5"><div class="card"><h4>Correlations among traits</h4><p class="help">Pearson correlations of the binary trait indicators (phi), across all retained articles. +1 means traits occur together, −1 means they separate, and 0 means no linear association. Colours and cell values show r, without weights. Click a cell to cross the two traits.</p></div><div class="matrix-scroll"><div id="traitcorr" class="panel matrix-plot"></div></div></div>
+  <div class="sub" id="fm5"><div class="card"><h4>Correlations among variables</h4><p class="help">Pearson correlation r across all retained articles (for two 0/1 variables this is phi). +1 = occur together / rise together, −1 = separate, 0 = no linear association. Cell values show r, without weights. Choose which groups of variables to include and whether the matrix is ordered by group or clustered by correlation. Click a cell to cross two 0/1 features.</p>
+    <div class="row" id="corr-groups" style="margin:6px 0"></div>
+    <div class="row"><b>Order</b><label><input type="radio" name="corder" value="cluster" checked> clustered by correlation</label><label><input type="radio" name="corder" value="group"> by group</label>
+    <b>Distance</b><label><input type="radio" name="cdist" value="r" checked> 1 − r (positively correlated together)</label><label><input type="radio" name="cdist" value="abs"> 1 − |r| (strength only)</label></div></div>
+    <div class="matrix-scroll"><div id="traitcorr" class="panel matrix-plot"></div></div></div>
   <details class="card" id="crossbox" style="margin-top:16px"><summary style="font-size:18px">Cross two features (click to expand)</summary>
     <div class="row" style="margin:10px 0"><label>Feature A <select id="fa"></select></label><label>Feature B <select id="fb"></select></label></div><div id="crossout"></div></details>
 </section>
@@ -127,4 +134,4 @@
 <footer id="foot"></footer>
 
 
-<script type="module" src="unlock.js?v=9344c86b30d2"></script></body></html>
+<script type="module" src="unlock.js?v=626b301597d0"></script></body></html>

@@ -2,7 +2,7 @@
 (function () {
   const T = G.tableExports = {};
   T.names = {
-    all:'All tables',author_connections:'Shared-author connections',author_connections_visible:'Visible shared-author connections', trait_correlations:'Trait correlations', variable_correlations:'Variable correlations', cluster_summary:'Cluster summary', splits:'Hierarchy splits', cluster_profiles:'Cluster feature profiles', screening:'Feature screening',
+    all:'All tables',pca_coding:'How columns feed PCA',pca_input_matrix:'Standardized weighted PCA input',author_connections:'Shared-author connections',author_connections_visible:'Visible shared-author connections', trait_correlations:'Trait correlations', variable_correlations:'Variable correlations', cluster_summary:'Cluster summary', splits:'Hierarchy splits', cluster_profiles:'Cluster feature profiles', screening:'Feature screening',
     scores:'PCA scores and memberships', loadings:'PCA loadings', variance:'Explained variance',
     feature_matrix:'Binary feature matrix', feature_statistics:'Feature frequencies and variance',
     cooccurrence:'Co-occurrence counts', clustered_cooccurrence:'Clustered co-occurrence counts',
@@ -20,6 +20,8 @@
   };
   T.build = (settings, current, controls) => {
     const D=G.D,n=G.n,C=G.C,tables={},orders={},labels=f=>G.F[f].label;
+    tables.pca_coding=G.catalogue.table(settings,D);
+    if(current)tables.pca_input_matrix=G.catalogue.matrix(settings,D);
     const add=(key,columns,rows)=>tables[key]={title:T.names[key]||key,columns,rows};
     const matrix=(key,keys,values)=>add(key,['feature',...keys],values.map((row,i)=>[keys[i],...row]));
     const keys=G.binKeys,values=D.X.map(row=>keys.map(f=>row[G.col.get(f)]));

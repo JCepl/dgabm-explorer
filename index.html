@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=421d0ba033c4"></head><body class="locked">
+<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=91a497546ba3"></head><body class="locked">
 <nav>
-  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.7 ✓</span>
-  <a data-tab="intro" class="on">Start here</a><a data-tab="pca">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data dictionary</a>
+  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Expanded papers and variables; R exports verified">v2026.11.13.8 ✓</span>
+  <a data-tab="intro" class="on">Start here</a><a data-tab="pca">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data catalogue</a>
   <span class="sp"></span><button class="btn" onclick="location.reload()">Lock</button>
   <details class="download-menu" id="download-menu"><summary>Download</summary><div class="download-panel">
     <label for="export-figure">Result to export</label><select id="export-figure"></select>
@@ -143,13 +143,18 @@
 </section>
 
 <section id="tab-dict" class="tab">
-  <p class="help">The actual workbook: all retained articles by all 44 columns - scroll down for more rows, right for more columns. The header stays put while you scroll: role badges, the variable(s) each column produced (click a chip to switch it on or off in the PCA), and the column name (hover for its full text).</p>
-  <div class="row" style="margin-bottom:8px"><input type="search" id="dsearch" placeholder="search all cells..." style="width:300px"><span class="help" id="dcount"></span></div>
-  <div class="scroll" style="max-height:78vh" id="dtable"></div>
+  <div class="workspace-tabs" id="catalogue-tabs"><button data-catalogue="workbook" class="on">Original worksheet</button><button data-catalogue="coding">How columns feed PCA</button></div>
+  <div id="catalogue-workbook" class="catalogue-view on"><p class="help">The original worksheet, in source-column order. Hover for full values and headers; variable chips show what each column produces.</p><div class="row" style="margin-bottom:8px"><input type="search" id="dsearch" placeholder="search all cells..." style="width:300px"><span class="help" id="dcount"></span></div><div class="scroll" id="dtable"></div></div>
+  <div id="catalogue-coding" class="catalogue-view">
+    <div class="coding-explanation"><h3>From worksheet columns to the PCA matrix</h3><p>One source column can generate several variables: inheritance, for example, becomes separate PG, QG, Infinitesimal and Clonal quantitative indicators. The table shows the actual R expressions and examples from the active papers.</p><p><b>PCA input:</b> each selected, varying coded column is centred, divided by its sample standard deviation, and multiplied by √(variable weight × category weight). Constant columns and zero-weight variables are left out.</p><details><summary>How to read the rules</summary><p><code>as.integer</code> turns a logical condition into 0 or 1; <code>grepl</code> matches text. <code>hit</code> and <code>output_hit</code> are text-match helpers. <code>indicates_presence</code> checks positive wording while handling explicit negatives and comparison cases. Numeric pairs parse reported values; their <code>reported</code> flag records availability. <code>fill_median</code> replaces unparsed values; log2 or log10 then transforms counts. The full helper definitions are in the downloaded <code>feature_rules.R</code>.</p></details></div>
+    <div class="row coding-controls"><input id="coding-search" type="search" placeholder="Find a source column, variable or rule…" aria-label="Search PCA coding"><span id="coding-count" class="help"></span><button id="coding-download" class="btn">Download coding catalogue</button></div>
+    <details id="coding-matrix-details"><summary>See the actual numeric PCA input matrix</summary><div class="row"><label>Display <select id="coding-matrix-scale"><option value="standardized">Standardized × √weight (sent to PCA)</option><option value="coded">Coded values before standardization</option></select></label><button id="coding-matrix-download" class="btn">Download exact PCA input</button></div><p class="help">Three decimals are displayed for standardized values; hover or download for full precision. Coding and median imputation are fixed when the data are exported; standardization uses the active paper set.</p><div id="coding-matrix" class="scroll"></div></details>
+    <div id="coding-table" class="scroll"></div>
+  </div>
 </section>
 
 </main>
 <footer id="foot"></footer>
 
 
-<script type="module" src="unlock.js?v=421d0ba033c4"></script></body></html>
+<script type="module" src="unlock.js?v=91a497546ba3"></script></body></html>

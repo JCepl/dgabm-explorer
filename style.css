@@ -263,6 +263,29 @@ table.mat thead th { min-width:150px; }
 #view-fit .row { padding:0 6px; gap:12px; font-size:12px; }
 #view-fit .panel-help { margin:5px 6px; }
 
+.catalogue-view { display:none; min-height:0; }
+.catalogue-view.on { display:flex; flex-direction:column; flex:1; min-height:0; }
+#catalogue-coding.on { overflow:auto; padding:0 3px 12px; }
+.coding-explanation { background:#fff; border:1px solid var(--line); padding:12px 14px; border-radius:8px; flex-shrink:0; }
+.coding-explanation h3 { font-size:16px; margin:0 0 6px; }
+.coding-explanation p { font-size:11px; color:#526773; line-height:1.5; margin:5px 0; }
+.coding-explanation summary { font-size:11px; cursor:pointer; }
+.coding-controls { margin:10px 0; flex-shrink:0; }
+#coding-search { width:300px; padding:7px; }
+#coding-table { flex:none; overflow:auto; }
+.coding-table { min-width:1150px; font-size:11px; }
+.coding-table th { white-space:normal; }
+.coding-table td { min-width:140px; vertical-align:top; }
+.coding-table td:first-child { min-width:180px; }
+.coding-table code { display:block; white-space:pre-wrap; overflow-wrap:anywhere; font-size:10px; color:#31596e; margin-top:5px; max-width:280px; }
+.coding-example { font-size:10px; margin-bottom:6px; min-width:200px; }
+.coding-example span { color:#6b7983; }
+.coding-table details { font-size:10px; margin-top:6px; }
+#coding-matrix-details { margin:0 0 12px; flex-shrink:0; font-size:12px; }
+#coding-matrix-details .row { padding:9px 0; font-size:11px; }
+#coding-matrix { max-height:340px; border:1px solid var(--line); }
+#coding-matrix td { padding:5px; font-size:10px; text-align:right; }
+
 body.locked > nav, body.locked > main, body.locked > footer { display:none; }
 .unlock-card { width:min(360px, calc(100vw - 64px)); padding:30px; background:#fff; color:#263238; border-radius:12px; box-shadow:0 3px 20px #12304a18; }
 .unlock-card h1 { font-size:21px; margin-top:0; color:#12304a; }

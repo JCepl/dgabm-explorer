@@ -23,7 +23,7 @@
     if(options.some(o=>o.value===previous))$('export-figure').value=previous;
     if(!visible.length&&!previous?.startsWith('table:')) {
       const tab=document.querySelector('nav [data-tab].on')?.dataset.tab;
-      $('export-figure').value='table:'+({dict:'workbook_filtered',fm:'feature_matrix',cite:'citation_edges'}[tab]||'all');
+      $('export-figure').value='table:'+({dict:document.querySelector('#catalogue-coding.on')?'pca_coding':'workbook_filtered',fm:'feature_matrix',cite:'citation_edges'}[tab]||'all');
     }
     $('download-snapshot').disabled=false;
   }
@@ -37,7 +37,7 @@
       await G.extra();
       const current=G.cur(),R=current?.R,lab=current?.lab,st=G.st,id=$('export-figure').value,el=$(id);
       const tableKey=id.startsWith('table:')?id.slice(6):null;
-      const settings=clone({schema_version:2,app_version:"2026.11.13.7",include_excluded:st.includeExcluded,paper_count:G.n,exported_at:new Date().toISOString(),scope:st.scope,
+      const settings=clone({schema_version:2,app_version:"2026.11.13.8",include_excluded:st.includeExcluded,paper_count:G.n,exported_at:new Date().toISOString(),scope:st.scope,
         ticked_features:G.D.columns.filter(f=>st.ticks.has(f)&&!G.excluded.has(f)),pca_available:!!current,features_used:R?.feats||[],
         excluded_features:[...G.excluded],feature_weights:st.w,category_weights:st.cw,
         effective_weights:Object.fromEntries((R?.feats||[]).map(f=>[f,G.ew(f)])),k:st.k,auto_k:st.auto,

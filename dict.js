@@ -6,8 +6,9 @@
 
   DT.render = function () {
     if (!G.hasExtra) { $('dtable').innerHTML = '<div class="skeleton" style="height:200px">Loading the workbook…</div>'; G.extra().then(DT.render); return; }
-    const D = G.D, st = G.st, ql = q.toLowerCase();
-    if (renderedQuery === ql) {
+    if($('catalogue-coding').classList.contains('on')){G.catalogue.render();return;}
+    const D = G.D, st = G.st, ql = q.toLowerCase(),key=ql+'|'+G.n;
+    if (renderedQuery === key) {
       $('dtable').querySelectorAll('.chip[data-f]').forEach(chip => {
         const on = st.ticks.has(chip.dataset.f);
         chip.classList.toggle('on', on);
@@ -15,7 +16,7 @@
       });
       return;
     }
-    renderedQuery = ql;
+    renderedQuery = key;
     const head = D.dict.map(d => `<th style="min-width:130px;vertical-align:top;text-align:left"><div>${d.roles.map(r => `<span class="badge b-${r}">${r}</span>`).join('')}</div>` +
       `<div style="margin:3px 0">${d.feeds.map(f => `<span class="chip${st.ticks.has(f) ? ' on' : ''}" data-f="${f}" aria-disabled="${G.excluded.has(f)}" title="${G.F[f] ? G.esc(G.F[f].label) : ''}: click to ${st.ticks.has(f) ? 'remove from' : 'add to'} the PCA">${G.esc(G.F[f] ? G.F[f].label : f)}</span>`).join('')}</div>` +
       `<div title="${G.esc(d.full)}">${d.col}. ${G.esc(d.name)}</div>${(() => { const i = d.full.indexOf(' ('); return i > 0 && d.full.endsWith(')') ? `<div class="defn" title="${G.esc(d.full)}">${G.esc(d.full.slice(i + 2, -1))}</div>` : ''; })()}</th>`).join('');
@@ -26,6 +27,8 @@
     $('dtable').querySelectorAll('.chip[data-f]').forEach(c => c.onclick = () => G.toggle(c.dataset.f));
   };
   DT.setup = function () {
+    G.catalogue.setup();
+    document.querySelectorAll('[data-catalogue]').forEach(button=>button.onclick=()=>{document.querySelectorAll('[data-catalogue]').forEach(b=>b.classList.toggle('on',b===button));document.querySelectorAll('.catalogue-view').forEach(v=>v.classList.toggle('on',v.id==='catalogue-'+button.dataset.catalogue));G.measureUpdate(DT.render);});
     let searchTimer;
     $('dsearch').oninput = e => { q = e.target.value; clearTimeout(searchTimer); searchTimer = setTimeout(() => G.measureUpdate(DT.render), 120); };
     $('dl-raw').onclick = async () => { await G.extra(); G.csv([G.D.dict.map(d => d.name), ...G.D.raw], 'dgabm_workbook_retained_articles.csv'); };

@@ -193,6 +193,9 @@ body[data-exporting="true"] nav > a { pointer-events:none; }
 
 .b-NEW { background: #C0392B; }
 
+.defn { font-weight:400; font-size:10px; line-height:1.35; color:#607D8B; text-transform:none; letter-spacing:0; margin-top:3px; max-height:6.8em; overflow:hidden; white-space:normal; }
+table.mat thead th { min-width:150px; }
+
 body.locked > nav, body.locked > main, body.locked > footer { display:none; }
 .unlock-card { width:min(360px, calc(100vw - 64px)); padding:30px; background:#fff; color:#263238; border-radius:12px; box-shadow:0 3px 20px #12304a18; }
 .unlock-card h1 { font-size:21px; margin-top:0; color:#12304a; }

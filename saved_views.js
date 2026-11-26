@@ -99,20 +99,137 @@
     if (!$('save-view-dialog').open) $('save-view-dialog').showModal();
   }
 
-  // Keep user-entered values in a single cell and prevent evaluation as a formula.
-  const cell = value => value.trim().replace(/[\t\r\n]+/g, ' ').replace(/^[=+@-]/, match => "'" + match);
+  const scope = 'https://www.googleapis.com/auth/drive.file';
+  let config, tokenClient, token, expiresAt, initialization, rows = [], busy = false;
 
-  async function copy(text, message) {
-    const field = $('save-view-copy');
-    field.hidden = true;
+  async function request(range, options = {}) {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${config.spreadsheetId}/values/${range}`;
+    const response = await fetch(url, {
+      ...options, headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+    });
+    if (!response.ok) {
+      const error = new Error(response.status === 403
+        ? 'Ask the Sheet owner for access. Saving requires edit access.'
+        : 'Google Sheets could not complete the request.');
+      error.status = response.status;
+      throw error;
+    }
+    return response.json();
+  }
+
+  function viewHash(link) {
     try {
-      await navigator.clipboard.writeText(text);
-      $('save-view-status').textContent = message;
+      const hash = new URL(link).hash;
+      if (hash.startsWith('#pca?view=')) {
+        read(new URLSearchParams(hash.slice(5)).get('view'));
+        return hash;
+      }
+    } catch {}
+    return '';
+  }
+
+  async function refresh() {
+    const {values = []} = await request('A2:D');
+    rows = values.filter(row => viewHash(row[3])).reverse();
+    $('saved-pca-views').replaceChildren(...rows.map(([name, author, date], i) =>
+      new Option([name, author, String(date ?? '').slice(0, 10)].filter(Boolean).join(' · '), String(i))));
+  }
+
+  function updateControls() {
+    const connected = Boolean(token && Date.now() < expiresAt);
+    $('connect-view-sheet').hidden = !tokenClient || connected;
+    $('connect-view-sheet').disabled = busy;
+    $('shared-pca-views').disabled = !connected;
+    $('save-to-sheet').disabled = busy;
+    $('load-from-sheet').disabled = busy || rows.length === 0;
+    $('refresh-view-sheet').disabled = busy;
+  }
+
+  function connection(message) {
+    $('view-connection-status').textContent = message;
+    updateControls();
+  }
+
+  async function initialize() {
+    try {
+      const response = await fetch('saved-views-sheets.json', {cache: 'no-store'});
+      if (!response.ok) throw new Error();
+      config = await response.json();
+      if (!/^[\w-]+$/.test(config.spreadsheetId || '') || !config.clientId || !config.apiKey ||
+          !/^\d+$/.test(config.projectNumber || '')) throw new Error();
+      await G.loadScript('https://accounts.google.com/gsi/client');
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: config.clientId, scope,
+        callback: acceptToken,
+        error_callback: () => connection('Google sign-in did not finish. Try connecting again.')
+      });
+      connection('Connect your Google account to access the team’s saved views.');
     } catch {
-      field.value = text;
-      field.hidden = false;
-      field.select();
-      $('save-view-status').textContent = 'Copy the selected text.';
+      connection('Save and Load will be available once the shared Google Sheet is connected. You can copy a restore link now.');
+    }
+  }
+
+  async function chooseSheet() {
+    await G.loadScript('https://apis.google.com/js/api.js');
+    await new Promise((resolve, reject) => gapi.load('picker', {callback: resolve, onerror: reject}));
+    const dialog = $('save-view-dialog');
+    dialog.close();
+    return new Promise(resolve => {
+      const view = new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS);
+      new google.picker.PickerBuilder().addView(view).setAppId(config.projectNumber)
+        .setDeveloperKey(config.apiKey).setOAuthToken(token)
+        .setOrigin(window.location.origin).setTitle('Select DG-ABM saved PCA views')
+        .setCallback(data => {
+          if (data.action !== google.picker.Action.PICKED && data.action !== google.picker.Action.CANCEL) return;
+          dialog.showModal();
+          resolve(data.action === google.picker.Action.PICKED && data.docs[0]?.id === config.spreadsheetId);
+        }).build().setVisible(true);
+    });
+  }
+
+  async function acceptToken(response) {
+    if (response.error || !response.access_token || !google.accounts.oauth2.hasGrantedAllScopes(response, scope)) {
+      connection('Google sign-in was incomplete. Try again.');
+      return;
+    }
+    busy = true;
+    token = response.access_token;
+    expiresAt = Date.now() + (Number(response.expires_in) - 30) * 1000;
+    try {
+      try {
+        await refresh();
+      } catch (error) {
+        if (![403, 404].includes(error.status)) throw error;
+        if (!await chooseSheet()) throw new Error('Select the team’s dedicated DG-ABM saved PCA views Sheet.');
+        await refresh();
+      }
+      connection(rows.length ? 'Connected to the team’s Google Sheet.' : 'Connected. No saved views yet.');
+    } catch (error) {
+      token = null;
+      connection(error.message);
+    } finally {
+      busy = false;
+      updateControls();
+    }
+  }
+
+  async function run(task) {
+    busy = true;
+    $('save-view-status').textContent = '';
+    updateControls();
+    try {
+      if (Date.now() >= expiresAt) throw Object.assign(new Error(), {status: 401});
+      await task();
+    } catch (error) {
+      if (error.status === 401) {
+        token = null;
+        connection('Reconnect Google to continue.');
+      } else {
+        $('save-view-status').textContent = error.message || 'Google Sheets could not complete the request.';
+      }
+    } finally {
+      busy = false;
+      updateControls();
     }
   }
 
@@ -122,21 +239,54 @@
       $('save-view-status').textContent = '';
       $('save-view-copy').hidden = true;
       dialog.showModal();
+      updateControls();
+      if (!initialization) initialization = initialize();
+      else if (token && Date.now() < expiresAt && !busy) run(refresh);
     };
     $('close-save-view').onclick = () => dialog.close();
-    $('copy-view-link').onclick = () => copy(V.link(), 'Restore link copied.');
+    $('copy-view-link').onclick = async () => {
+      const link = V.link(), field = $('save-view-copy');
+      field.hidden = true;
+      try {
+        await navigator.clipboard.writeText(link);
+        $('save-view-status').textContent = 'Restore link copied.';
+      } catch {
+        field.value = link;
+        field.hidden = false;
+        field.select();
+        $('save-view-status').textContent = 'Copy the selected restore link.';
+      }
+    };
+    $('connect-view-sheet').onclick = () => tokenClient.requestAccessToken();
+    $('refresh-view-sheet').onclick = () => run(refresh);
     $('view-name').oninput = event => event.target.setCustomValidity('');
     $('save-view-form').onsubmit = event => {
       event.preventDefault();
-      const name = cell($('view-name').value);
+      const name = $('view-name').value.trim();
       if (!name) {
         $('view-name').setCustomValidity('Enter a name for this view.');
         $('view-name').reportValidity();
         return;
       }
-      const date = new Date().toISOString();
-      const row = [name, cell($('view-author').value), date, V.link()].join('\t');
-      copy(row, 'Row copied. Paste it into the first column of an empty row in Google Sheets.');
+      const row = [name, $('view-author').value.trim(), new Date().toISOString(), V.link()];
+      run(async () => {
+        await request('A:D:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', {
+          method: 'POST', body: JSON.stringify({ values: [row] })
+        });
+        $('view-name').value = '';
+        $('save-view-status').textContent = 'Saved to Google Sheets.';
+        try { await refresh(); } catch {
+          $('save-view-status').textContent = 'Saved to Google Sheets. Use Refresh list to see the new view.';
+        }
+      });
+    };
+    $('load-from-sheet').onclick = () => {
+      const row = rows[Number($('saved-pca-views').value)];
+      const hash = row && viewHash(row[3]);
+      if (!hash) return;
+      dialog.close();
+      if (location.hash === hash) window.dispatchEvent(new Event('hashchange'));
+      else location.hash = hash;
     };
   };
 })();

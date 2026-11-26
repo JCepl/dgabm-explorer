@@ -181,8 +181,10 @@ footer { flex:0 0 22px; padding:3px 12px; font-size:10px; white-space:nowrap; ov
 #save-view-dialog::backdrop { background:#12304a66; }
 #save-view-dialog h2 { margin:0; }
 #save-view-dialog .save-view-heading { justify-content:space-between; margin-bottom:12px; }
-#save-view-form label { display:block; margin-top:10px; font-size:13px; }
-#save-view-form input, #save-view-copy { width:100%; box-sizing:border-box; font:inherit; }
+#shared-pca-views label { display:block; margin-top:10px; font-size:13px; }
+#shared-pca-views { border:0; margin:0 0 12px; padding:0; min-width:0; }
+#save-view-form input, #saved-pca-views { width:100%; box-sizing:border-box; font:inherit; margin-bottom:8px; }
+#save-view-copy { width:100%; box-sizing:border-box; margin-top:8px; }
 #save-view-status { min-height:1em; margin-bottom:0; }
 body[data-exporting="true"] nav > a { pointer-events:none; }
 

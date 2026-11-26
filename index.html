@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=8cc8dc5d3465"></head><body class="locked">
+<title>DG-ABM article explorer</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%2312304a%27/%3E%3Ccircle cx=%2711%27 cy=%2720%27 r=%274%27 fill=%27%2356B4E9%27/%3E%3Ccircle cx=%2721%27 cy=%2712%27 r=%274%27 fill=%27%23E69F00%27/%3E%3Ccircle cx=%2722%27 cy=%2722%27 r=%273%27 fill=%27%23fff%27/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css?v=ea36d928cb27"></head><body class="locked">
 <nav>
-  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="Larger PCA map and stacked hierarchy">v2026.11.26.2 ✓</span>
+  <span class="brand">DG-ABM article explorer</span><span class="version-badge" title="PCA saved views">v2026.11.26.3 ✓</span>
   <a data-tab="intro" class="on">Start here</a><a data-tab="pca">PCA and hierarchy</a><a data-tab="fm">Feature matrix</a><a data-tab="cite">Cross-citations</a><a data-tab="dict">Data catalogue</a>
   <span class="sp"></span><button class="btn" onclick="location.reload()">Lock</button>
-  <button id="save-view" class="btn" type="button">Save PCA view</button>
+  <button id="save-view" class="btn" type="button">PCA views</button>
   <details class="download-menu" id="download-menu"><summary>Download</summary><div class="download-panel">
     <label for="export-figure">Result to export</label><select id="export-figure"></select>
     <button id="download-snapshot" class="btn">Selected result + R + data</button>
@@ -15,17 +15,25 @@
   </div></details>
 </nav>
 <dialog id="save-view-dialog" aria-labelledby="save-view-title">
+  <div class="row save-view-heading"><h2 id="save-view-title">Saved PCA views</h2><button id="close-save-view" class="btn" type="button">Close</button></div>
+  <p id="view-connection-status" class="help" role="status">Checking the shared Google Sheet…</p>
+  <button id="connect-view-sheet" class="btn" type="button" hidden>Connect Google Sheet</button>
+  <fieldset id="shared-pca-views" aria-label="Google Sheets saved views" disabled>
   <form id="save-view-form">
-    <div class="row save-view-heading"><h2 id="save-view-title">Save PCA view</h2><button id="close-save-view" class="btn" type="button">Close</button></div>
     <label for="view-name">View name</label>
     <input id="view-name" maxlength="100" placeholder="e.g. Inheritance groups, k = 4" required>
     <label for="view-author">Saved by</label>
     <input id="view-author" maxlength="80" autocomplete="name" placeholder="Your name">
-    <p class="help">Paste the copied row into your team’s Google Sheet. Anyone with app access can open the restore link.</p>
-    <div class="row"><button class="btn" type="submit">Copy row for Google Sheets</button><button id="copy-view-link" class="btn" type="button">Copy restore link</button></div>
-    <p id="save-view-status" class="help" role="status"></p>
-    <textarea id="save-view-copy" aria-label="Text to copy" readonly hidden></textarea>
+    <button id="save-to-sheet" class="btn" type="submit">Save to Google Sheets</button>
   </form>
+  <hr>
+  <label for="saved-pca-views">Previous views</label>
+  <select id="saved-pca-views"></select>
+  <div class="row"><button id="load-from-sheet" class="btn" type="button">Load view</button><button id="refresh-view-sheet" class="btn" type="button">Refresh list</button></div>
+  </fieldset>
+  <button id="copy-view-link" class="btn" type="button">Copy restore link</button>
+  <textarea id="save-view-copy" aria-label="Restore link to copy" readonly hidden></textarea>
+  <p id="save-view-status" class="help" role="status"></p>
 </dialog>
 <div id="boot" class="boot">
     <form id="unlock-form" class="unlock-card">
@@ -171,4 +179,4 @@
 <footer id="foot"></footer>
 
 
-<script type="module" src="unlock.js?v=8cc8dc5d3465"></script></body></html>
+<script type="module" src="unlock.js?v=ea36d928cb27"></script></body></html>

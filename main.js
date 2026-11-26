@@ -7,11 +7,11 @@
   G.$('intro-retained').textContent=G.D.n;G.$('intro-total').textContent=G.D.n_all;G.$('intro-variables').textContent=G.D.features.length;
   document.querySelectorAll('[data-open]').forEach(button=>button.onclick=()=>show(button.dataset.open));
   const dirty = new Set(Object.keys(mods)); let cur = 'intro';
-  function show(t) {
+  function show(t, keepLink = false) {
     cur = t; document.querySelectorAll('nav a[data-tab]').forEach(a => a.classList.toggle('on', a.dataset.tab === t));
     document.querySelectorAll('.tab').forEach(s => s.classList.toggle('on', s.id === 'tab-' + t));
     if (dirty.has(t)) { dirty.delete(t); G.measureUpdate(() => mods[t].render()); }
-    if (location.hash !== '#' + t) history.replaceState(null, '', '#' + t);
+    if (!keepLink && location.hash !== '#' + t) history.replaceState(null, '', '#' + t);
     window.dispatchEvent(new Event('resize'));
   }
   let renderFrame = null;
@@ -27,7 +27,16 @@
   G.$('inclx-n').textContent = G.D.n_all - G.D.n; G.$('inclx').onchange = e => G.setIncludeExcluded(e.target.checked);
   G.on('view', () => { if (cur === 'pca') G.measureUpdate(() => G.pca.renderView()); else dirty.add('pca'); });
   document.querySelectorAll('nav a[data-tab]').forEach(a => a.onclick = () => show(a.dataset.tab));
-  const start = (location.hash || '#intro').slice(1); show(mods[start] ? start : 'intro');
+  G.views.setup();
+  function openLocation() {
+    const hash = location.hash;
+    const tab = hash.slice(1).split('?')[0];
+    const restored = G.views.restore(hash);
+    if (restored) Object.keys(mods).forEach(t => dirty.add(t));
+    show(Object.hasOwn(mods, tab) ? tab : 'intro', restored);
+  }
+  openLocation();
+  window.addEventListener('hashchange', openLocation);
   const setFoot = () => { G.$('foot').textContent = `Data exported ${G.D.generated} from the R pipeline · ${G.n} articles${G.st.includeExcluded ? ' (including the excluded papers)' : ''} · all analysis runs in your browser (PCA, Ward clustering and silhouettes agree with R to ~1e-12).`; };
   setFoot(); G.on('papers', setFoot);
   G.$('boot').remove();

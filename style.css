@@ -173,6 +173,14 @@ footer { flex:0 0 22px; padding:3px 12px; font-size:10px; white-space:nowrap; ov
 .download-panel label, #download-status { font-size:11px; }
 #download-status { margin:9px 0 0; color:var(--mut); }
 .download-panel button:disabled { opacity:.5; cursor:wait; }
+#save-view { margin-left:10px; white-space:nowrap; }
+#save-view-dialog { width:min(380px, calc(100vw - 64px)); padding:20px; border:1px solid var(--line); border-radius:10px; color:var(--ink); background:#fff; }
+#save-view-dialog::backdrop { background:#12304a66; }
+#save-view-dialog h2 { margin:0; }
+#save-view-dialog .save-view-heading { justify-content:space-between; margin-bottom:12px; }
+#save-view-form label { display:block; margin-top:10px; font-size:13px; }
+#save-view-form input, #save-view-copy { width:100%; box-sizing:border-box; font:inherit; }
+#save-view-status { min-height:1em; margin-bottom:0; }
 body[data-exporting="true"] nav > a { pointer-events:none; }
 
 /* The loadings view now has one chart. */

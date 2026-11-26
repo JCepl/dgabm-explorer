@@ -62,7 +62,7 @@
       if (!three && ids.length >= 4) { const e = ellipse(ids.map(i => [p.scores[i][0], p.scores[i][1]]), 0.68); tr.push({ x: e.map(v => v[0]), y: e.map(v => v[1]), type: 'scatter', mode: 'lines', fill: 'toself', fillcolor: ci(c) + '12', line: { width: 0 }, hoverinfo: 'skip', showlegend: false }); }
       const mk = i => st.mark && G.D.articles[i].model;
       const t = { x: ids.map(i => p.scores[i][0]), y: ids.map(i => p.scores[i][1]), text: ids.map(i => G.D.articles[i].id), customdata: ids, hovertext: ids.map(hov), hoverinfo: 'text', name: 'C' + c + (G.isRecommended() && G.preset.labels[c - 1] ? ' · ' + G.preset.labels[c - 1] : ''), type: three ? 'scatter3d' : 'scatter', mode: nums ? 'markers+text' : 'markers',
-        textfont: { size: three ? 9 : 9, color: txtCol(c) }, marker: { color: ci(c), symbol: ids.map(i => G.D.articles[i].retained === false ? 'square' : 'circle'), size: ids.map(i => nums ? (mk(i) ? (three ? 14 : 22) : (three ? 11 : 18)) : (mk(i) ? (three ? 10 : 12) : (three ? 7 : 8))), line: { color: ids.map(i => mk(i) ? '#FFD166' : '#fff'), width: ids.map(i => mk(i) ? 2 : .6) } } };
+        textfont: { size: 8, color: txtCol(c) }, marker: { color: ci(c), opacity: .82, symbol: ids.map(i => G.D.articles[i].retained === false ? 'square' : 'circle'), size: ids.map(i => nums ? (mk(i) ? (three ? 12 : 18) : (three ? 10 : 15)) : (mk(i) ? (three ? 8 : 10) : (three ? 6 : 7))), line: { color: ids.map(i => mk(i) ? '#E9B949' : '#fff'), width: ids.map(i => mk(i) ? 1.4 : .5) } } };
       if (three) { t.z = ids.map(i => p.scores[i][2]); t.marker.line = { color: '#fff', width: 1 }; }
       if(focus)t.opacity=.22;
       tr.push(t);
@@ -79,7 +79,7 @@
         const sc = 0.72 * Math.min(mx / Math.max(...L.map(l => Math.abs(l.a))), my / Math.max(...L.map(l => Math.abs(l.b))));
         // Move nearby labels apart without moving the vector endpoints.
         const labels=[],width=Math.max(200,$('pca').clientWidth-65),height=Math.max(200,$('pca').clientHeight-90);
-        const measure=document.createElement('canvas').getContext('2d');measure.font='bold 11px Arial';
+        const measure=document.createElement('canvas').getContext('2d');measure.font='10px Arial';
         L.forEach(l=>{
           const px=(l.a*sc/(2*mx)+.5)*width,py=(.5-l.b*sc/(2*my))*height,w=measure.measureText(G.F[l.f].label).width+10;
           let offset=0;
@@ -87,8 +87,8 @@
             const shift=attempt===0?0:Math.ceil(attempt/2)*21*(attempt%2?1:-1),box={left:px-w/2,right:px+w/2,top:py-shift-10,bottom:py-shift+10};
             if(!labels.some(b=>box.left<b.right+4&&box.right>b.left-4&&box.top<b.bottom+3&&box.bottom>b.top-3)){offset=shift;labels.push(box);break;}
           }
-          ann.push({x:l.a*sc,y:l.b*sc,ax:0,ay:0,axref:'x',ayref:'y',xref:'x',yref:'y',showarrow:true,arrowhead:2,arrowsize:1,arrowwidth:2,arrowcolor:'#163d59',text:''});
-          ann.push({x:l.a*sc,y:l.b*sc,xref:'x',yref:'y',ax:0,ay:-offset,showarrow:offset!==0,arrowhead:0,arrowwidth:.7,arrowcolor:'#637f90',text:'<b>'+G.esc(G.F[l.f].label)+'</b>',font:{size:11,color:'#163d59'},bgcolor:'rgba(255,255,255,.94)',bordercolor:'rgba(22,61,89,.15)',borderpad:3,hovertext:`PC1: ${l.a.toFixed(3)}<br>PC2: ${l.b.toFixed(3)}`});
+          ann.push({x:l.a*sc,y:l.b*sc,ax:0,ay:0,axref:'x',ayref:'y',xref:'x',yref:'y',showarrow:true,arrowhead:2,arrowsize:1,arrowwidth:focus?1.5:1,arrowcolor:focus?'#3d637d':'#71899a',text:''});
+          ann.push({x:l.a*sc,y:l.b*sc,xref:'x',yref:'y',ax:0,ay:-offset,showarrow:offset!==0,arrowhead:0,arrowwidth:.6,arrowcolor:'#8195a3',text:G.esc(G.F[l.f].label),font:{size:10,color:'#466176'},bgcolor:'rgba(255,255,255,.84)',borderpad:2,hovertext:`PC1: ${l.a.toFixed(3)}<br>PC2: ${l.b.toFixed(3)}`});
         });
       }
       layout.annotations = ann;
@@ -143,7 +143,7 @@
     const L=R.feats.map((f,i)=>({f,v:p.loadings[pc][i]})).sort((a,b)=>Math.abs(b.v)-Math.abs(a.v)).slice(0,count).reverse();
     const height=Math.max(400,L.length*28+85),limit=Math.max(...L.map(l=>Math.abs(l.v)))*1.2;
     $('loadplot').style.height=height+'px';
-    Plotly.react('loadplot',[{type:'bar',orientation:'h',x:L.map(l=>l.v),y:L.map(l=>G.F[l.f].label),text:L.map(l=>l.v.toFixed(3)),textposition:'outside',cliponaxis:false,textfont:{size:11,color:'#163d59'},marker:{color:L.map(l=>l.v>=0?'#245d82':'#b96938')},hovertemplate:'%{y}: %{x:.4f}<extra></extra>'}],
+    Plotly.react('loadplot',[{type:'bar',orientation:'h',x:L.map(l=>l.v),y:L.map(l=>G.F[l.f].label),text:L.map(l=>l.v.toFixed(3)),textposition:'outside',cliponaxis:false,textfont:{size:11,color:'#466176'},marker:{color:L.map(l=>l.v>=0?'#6489a3':'#be8b70')},hovertemplate:'%{y}: %{x:.4f}<extra></extra>'}],
       {height,margin:{l:225,r:55,t:45,b:45},title:{text:`PC${pc+1}: ${p.explained[pc].toFixed(1)}% of variance · ${L.length} of ${R.feats.length} variables`,font:{size:12},x:.02},xaxis:{title:'PCA loading',range:[-limit,limit],zeroline:true,zerolinewidth:1.5,zerolinecolor:'#8699a5',gridcolor:'#edf1f5'},yaxis:{tickfont:{size:11},automargin:true},paper_bgcolor:'#fff',plot_bgcolor:'#fff',font:{color:G.font()}},{displaylogo:false,responsive:true,displayModeBar:false});
   }
   function tables(R, lab) {
@@ -207,6 +207,13 @@
     $('r20').onclick = e => { e.preventDefault(); st.ticks = new Set(G.D.default20.filter(f => !G.excluded.has(f))); st.scope = 'all'; G.emit('scope'); G.emit('state'); };
     $('recommended').onclick = e => { e.preventDefault(); st.ticks = new Set(G.recommendedFeatures); st.scope = G.preset.scope; st.k = G.preset.k; st.auto = false; G.D.columns.forEach(f => st.w[f] = 1); G.D.group_order.forEach(g => st.cw[g] = 1); G.emit('scope'); G.ext.weightsPanel(); G.emit('state'); };
     $('rst').onclick = e => { e.preventDefault(); st.ticks = new Set(G.D.startup); G.emit('state'); };
-    window.addEventListener('resize', () => { const c = G.cur(); if (c && $('tab-pca').classList.contains('on')) drawDend(c.R, c.lab); });
+    window.addEventListener('resize', () => {
+      if (!$('tab-pca').classList.contains('on') || !$('view-map').classList.contains('on')) return;
+      const c = G.cur();
+      if (c) {
+        G.lazyPlot('pca', () => drawMap(c.R, c.lab));
+        G.lazyPlot('dend', () => drawDend(c.R, c.lab));
+      }
+    });
   };
 })();

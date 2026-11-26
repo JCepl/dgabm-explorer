@@ -102,7 +102,12 @@ footer { flex:0 0 22px; padding:3px 12px; font-size:10px; white-space:nowrap; ov
 .workspace-view, .citation-view { display:none; }
 .workspace-view.on, .citation-view.on { display:flex; flex:1; flex-direction:column; min-height:0; min-width:0; }
 .view-scroll { overflow:auto; }
-.map-grid, .fit-grid.on { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:10px; flex:1; min-height:0; }
+.map-grid, .fit-grid.on { display:grid; grid-template-columns:minmax(0,1fr); gap:10px; flex:1; min-height:0; }
+#view-map.on { display:block; overflow:auto; }
+.map-grid { grid-template-rows:clamp(460px, 69vh, 820px) auto clamp(320px, 50vh, 600px); }
+.pca-map-card { grid-row:1; }
+.map-grid #info { grid-row:2; margin:0; }
+.hierarchy-card { grid-row:3; }
 .plot-card { display:flex; flex-direction:column; min-height:0; min-width:0; background:#fff; border:1px solid var(--line); border-radius:10px; padding:10px 8px 4px; overflow:hidden; }
 .plot-card h4 { font-size:14px; margin:0 4px 3px; }
 .plot-card .panel-help { margin:0 4px 3px; font-size:10px; }
@@ -153,8 +158,6 @@ footer { flex:0 0 22px; padding:3px 12px; font-size:10px; white-space:nowrap; ov
   .pca-stage { flex:1; }
   .feature-toggle { display:block; }
   .workspace-tabs { flex-shrink:0; }
-  .map-grid { grid-template-columns:minmax(0,1fr); overflow:auto; }
-  .map-grid .plot-card { min-height:300px; }
   .fit-grid.on { grid-template-columns:minmax(0,1fr); overflow:auto; }
   .fit-grid .plot-card { min-height:300px; }
   .status-row { align-items:flex-start; }
@@ -192,10 +195,14 @@ body[data-exporting="true"] nav > a { pointer-events:none; }
 
 /* ---- enlarge, zoom, numbers (2026-11-13) ---- */
 .card-title { display:flex; align-items:center; gap:10px; }
+.plot-size { margin-left:auto; white-space:nowrap; }
 .expand-btn { margin-left:auto; font:inherit; font-size:11px; font-weight:600; padding:2px 9px; border:1px solid #cfd8de; border-radius:7px; background:#fff; cursor:pointer; color:#4a5a66; }
 .expand-btn:hover { background:#f1f4f7; }
-.plot-card.expanded { position:fixed !important; inset:10px; z-index:90; display:flex; flex-direction:column; padding:14px 16px; box-shadow:0 0 0 100vmax rgba(18,48,74,.6); min-height:0; max-height:none; }
-.plot-card.expanded .panel, .plot-card.expanded #dend { flex:1; min-height:0; height:auto !important; }
+.expand-btn[aria-pressed="true"] { background:#e9f0f6; color:var(--navy); }
+.plot-card:is(.larger, .expanded) { position:fixed; z-index:90; padding:14px 16px; min-height:0; max-height:none; }
+.plot-card.larger { inset:8vh max(18px, 6vw); box-shadow:0 0 0 100vmax rgba(18,48,74,.36); }
+.plot-card.expanded { inset:10px; box-shadow:0 0 0 100vmax rgba(18,48,74,.6); }
+.plot-card:is(.larger, .expanded) :is(#pca, #dend) { flex:1; min-height:0; height:auto; }
 .zoombar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:0 0 8px; padding:6px 12px; background:#fff; border:1px solid var(--line); border-radius:10px; }
 .zoombar input[type=range] { width:180px; } .zoombar .btn { padding:2px 10px; }
 

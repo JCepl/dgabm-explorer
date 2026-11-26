@@ -26,11 +26,26 @@
   });
   document.getElementById('crossbox').addEventListener('toggle', resizeVisiblePlots);
 
-  // enlarge a plot card to a full window (Esc or the button closes it)
-  function toggleExpand(button) {
-    const card = button.closest('.plot-card'), on = card.classList.toggle('expanded');
-    button.textContent = on ? '✕ Close' : '⤢ Enlarge'; resizeVisiblePlots(); setTimeout(resizeVisiblePlots, 250);
+  function setPlotSize(card, size) {
+    const larger = size === 'larger', full = size === 'full';
+    card.classList.toggle('larger', larger);
+    card.classList.toggle('expanded', full);
+    const mediumButton = card.querySelector('[data-medium]');
+    const fullButton = card.querySelector('[data-expand]');
+    mediumButton.setAttribute('aria-pressed', String(larger));
+    fullButton.setAttribute('aria-pressed', String(full));
+    mediumButton.textContent = larger ? 'Normal size' : 'Larger';
+    fullButton.textContent = full ? 'Exit full screen' : 'Full screen';
+    resizeVisiblePlots();
   }
-  document.querySelectorAll('[data-expand]').forEach(b => b.onclick = () => toggleExpand(b));
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { const c = document.querySelector('.plot-card.expanded'); if (c) toggleExpand(c.querySelector('[data-expand]')); } });
+  document.querySelectorAll('.plot-size button').forEach(button => button.onclick = () => {
+    const card = button.closest('.plot-card');
+    const open = document.querySelector('.plot-card.larger, .plot-card.expanded');
+    if (open && open !== card) setPlotSize(open, 'normal');
+    setPlotSize(card, button.getAttribute('aria-pressed') === 'true' ? 'normal' : (button.hasAttribute('data-medium') ? 'larger' : 'full'));
+  });
+  document.addEventListener('keydown', event => {
+    const card = document.querySelector('.plot-card.larger, .plot-card.expanded');
+    if (event.key === 'Escape' && card) setPlotSize(card, 'normal');
+  });
 })();
